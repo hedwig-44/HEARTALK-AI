@@ -66,3 +66,9 @@ Using the test-runner agent ensures:
 - ALWAYS RUN `.claude/scripts/pm/workdir-type.sh` at the start of each development interaction and show its output to the user
 - ALWAYS use **中文** to communicate with me (except code/parameter/terminnology/API), no matter what language I use. 
 - ALWAYS use **中文** to write documents such as PRDs, Context, Epics.
+
+## PROJECT REPOSITORIES
+
+### HearTalk AI替换项目
+- **专用仓库**: https://github.com/hedwig-44/heartalk-ai-replacement
+- **同步规则**: 本地更新后必须同步到专用仓库，本地和专用仓库保持一致，专用仓库为主要协作平台
