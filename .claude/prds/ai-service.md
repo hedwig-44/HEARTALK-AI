@@ -1,5 +1,5 @@
 ---
-name: heartalk-ai-mvp
+name: ai-service
 description: HearTalk AI服务MVP替换方案 - 专注核心功能的快速实现版本
 status: backlog
 created: 2025-09-10T12:45:00Z
@@ -399,7 +399,7 @@ graph TB
 ## Next Steps
 
 1. **批准MVP PRD**: 确认简化需求和6周开发计划
-2. **创建MVP Epic**: 运行 `pm:prd-parse heartalk-ai-mvp` 创建实施计划
+2. **创建MVP Epic**: 运行 `pm:prd-parse ai-service` 创建实施计划
 3. **环境准备**: 确认开发环境和Byteplus/VikingDB配置
 4. **团队组建**: 分配1名全栈开发工程师
 5. **开始开发**: 按照6周计划开始Phase 1开发
