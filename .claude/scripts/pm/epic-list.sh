@@ -31,7 +31,7 @@ for dir in .claude/epics/*/; do
   [ -z "$p" ] && p="0%"
 
   # Count tasks
-  t=$(ls "$dir"[0-9]*.md 2>/dev/null | wc -l)
+  t=$(ls "$dir"[A-Z][A-Z][A-Z][0-9][0-9][0-9].md 2>/dev/null | wc -l)
 
   # Format output with GitHub issue number if available
   if [ -n "$g" ]; then
@@ -87,7 +87,7 @@ fi
 echo ""
 echo "📊 Summary"
 total=$(ls -d .claude/epics/*/ 2>/dev/null | wc -l)
-tasks=$(find .claude/epics -name "[0-9]*.md" 2>/dev/null | wc -l)
+tasks=$(find .claude/epics -name "[A-Z][A-Z][A-Z][0-9][0-9][0-9].md" 2>/dev/null | wc -l)
 echo "   Total epics: $total"
 echo "   Total tasks: $tasks"
 

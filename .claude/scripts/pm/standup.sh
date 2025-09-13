@@ -21,7 +21,7 @@ if [ -n "$recent_files" ]; then
   # Count by type
   prd_count=$(echo "$recent_files" | grep -c "/prds/" || echo 0)
   epic_count=$(echo "$recent_files" | grep -c "/epic.md" || echo 0)
-  task_count=$(echo "$recent_files" | grep -c "/[0-9]*.md" || echo 0)
+  task_count=$(echo "$recent_files" | grep -c "/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md" || echo 0)
   update_count=$(echo "$recent_files" | grep -c "/updates/" || echo 0)
 
   [ $prd_count -gt 0 ] && echo "  • Modified $prd_count PRD(s)"
@@ -51,7 +51,7 @@ echo "⏭️ Next Available Tasks:"
 count=0
 for epic_dir in .claude/epics/*/; do
   [ -d "$epic_dir" ] || continue
-  for task_file in "$epic_dir"[0-9]*.md; do
+  for task_file in "$epic_dir"[A-Z][A-Z][A-Z][0-9][0-9][0-9].md; do
     [ -f "$task_file" ] || continue
     status=$(grep "^status:" "$task_file" | head -1 | sed 's/^status: *//')
     [ "$status" != "open" ] && [ -n "$status" ] && continue
@@ -69,9 +69,9 @@ done
 
 echo ""
 echo "📊 Quick Stats:"
-total_tasks=$(find .claude/epics -name "[0-9]*.md" 2>/dev/null | wc -l)
-open_tasks=$(find .claude/epics -name "[0-9]*.md" -exec grep -l "^status: *open" {} \; 2>/dev/null | wc -l)
-closed_tasks=$(find .claude/epics -name "[0-9]*.md" -exec grep -l "^status: *closed" {} \; 2>/dev/null | wc -l)
+total_tasks=$(find .claude/epics -name "[A-Z][A-Z][A-Z][0-9][0-9][0-9].md" 2>/dev/null | wc -l)
+open_tasks=$(find .claude/epics -name "[A-Z][A-Z][A-Z][0-9][0-9][0-9].md" -exec grep -l "^status: *open" {} \; 2>/dev/null | wc -l)
+closed_tasks=$(find .claude/epics -name "[A-Z][A-Z][A-Z][0-9][0-9][0-9].md" -exec grep -l "^status: *closed" {} \; 2>/dev/null | wc -l)
 echo "  Tasks: $open_tasks open, $closed_tasks closed, $total_tasks total"
 
 exit 0

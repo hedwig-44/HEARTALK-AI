@@ -4,7 +4,7 @@ allowed-tools: Bash, Read, Write, LS, Task
 
 # Epic Decompose
 
-Break epic into concrete, actionable tasks.
+Break epic into concrete, actionable tasks with Epic-prefixed task IDs.
 
 ## Usage
 ```
@@ -27,7 +27,7 @@ Do not bother the user with preflight checks progress ("I'm not going to ..."). 
    - Stop execution if epic doesn't exist
 
 2. **Check for existing tasks:**
-   - Check if any numbered task files (001.md, 002.md, etc.) already exist in `.claude/epics/$ARGUMENTS/`
+   - Check if any Epic-prefixed task files (ABC001.md, ABC002.md, etc.) already exist in `.claude/epics/$ARGUMENTS/`
    - If tasks exist, list them and ask: "⚠️ Found {count} existing tasks. Delete and recreate all tasks? (yes/no)"
    - Only proceed with explicit 'yes' confirmation
    - If user says no, suggest: "View existing tasks with: /pm:epic-show $ARGUMENTS"
@@ -47,6 +47,18 @@ You are decomposing an epic into specific, actionable tasks for: **$ARGUMENTS**
 - Load the epic from `.claude/epics/$ARGUMENTS/epic.md`
 - Understand the technical approach and requirements
 - Review the task breakdown preview
+- Extract epic code from feature name:
+```bash
+# Generate epic code (max 3 chars, uppercase)
+epic_code=$(echo "$ARGUMENTS" | sed 's/-/ /g' | awk '{
+  result=""
+  for(i=1; i<=NF && length(result)<3; i++) {
+    result = result toupper(substr($i,1,1))
+  }
+  print result
+}')
+echo "Generated epic code: $epic_code"
+```
 
 ### 2. Analyze for Parallel Creation
 
@@ -70,11 +82,11 @@ Task:
     - {list of 3-4 tasks for this batch}
 
     For each task:
-    1. Create file: .claude/epics/$ARGUMENTS/{number}.md
+    1. Create file: .claude/epics/$ARGUMENTS/{epic_code}{number}.md (e.g., ABC001.md)
     2. Use exact format with frontmatter and all sections
     3. Follow task breakdown from epic
     4. Set parallel/depends_on fields appropriately
-    5. Number sequentially (001.md, 002.md, etc.)
+    5. Number sequentially (ABC001.md, ABC002.md, etc.)
 
     Return: List of files created
 ```
@@ -84,14 +96,15 @@ For each task, create a file with this exact structure:
 
 ```markdown
 ---
+id: "ABC001"  # Epic code + 3-digit number
 name: [Task Title]
 status: open
 created: [Current ISO date/time]
 updated: [Current ISO date/time]
 github: [Will be updated when synced to GitHub]
-depends_on: []  # List of task numbers this depends on, e.g., [001, 002]
+depends_on: ["ABC002"]  # Epic-prefixed task IDs this depends on
 parallel: true  # Can this run in parallel with other tasks?
-conflicts_with: []  # Tasks that modify same files, e.g., [003, 004]
+conflicts_with: ["ABC003"]  # Epic-prefixed task IDs that conflict
 ---
 
 # Task: [Task Title]
@@ -127,8 +140,8 @@ Clear, concise description of what needs to be done
 ```
 
 ### 3. Task Naming Convention
-Save tasks as: `.claude/epics/$ARGUMENTS/{task_number}.md`
-- Use sequential numbering: 001.md, 002.md, etc.
+Save tasks as: `.claude/epics/$ARGUMENTS/{epic_code}{number}.md`
+- Use Epic-prefixed numbering: ABC001.md, ABC002.md, etc.
 - Keep task titles short but descriptive
 
 ### 4. Frontmatter Guidelines
@@ -137,9 +150,9 @@ Save tasks as: `.claude/epics/$ARGUMENTS/{task_number}.md`
 - **created**: Get REAL current datetime by running: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
 - **updated**: Use the same real datetime as created for new tasks
 - **github**: Leave placeholder text - will be updated during sync
-- **depends_on**: List task numbers that must complete before this can start (e.g., [001, 002])
+- **depends_on**: List Epic-prefixed task IDs that must complete before this can start (e.g., ["ABC001", "ABC002"])
 - **parallel**: Set to true if this can run alongside other tasks without conflicts
-- **conflicts_with**: List task numbers that modify the same files (helps coordination)
+- **conflicts_with**: List Epic-prefixed task IDs that modify the same files (helps coordination)
 
 ### 5. Task Types to Consider
 - **Setup tasks**: Environment, dependencies, scaffolding
@@ -181,16 +194,16 @@ Spawning 3 agents for parallel task creation:
 ### 8. Task Dependency Validation
 
 When creating tasks with dependencies:
-- Ensure referenced dependencies exist (e.g., if Task 003 depends on Task 002, verify 002 was created)
-- Check for circular dependencies (Task A → Task B → Task A)
+- Ensure referenced dependencies exist (e.g., if ABC003 depends on ABC002, verify ABC002 was created)
+- Check for circular dependencies (ABC001 → ABC002 → ABC001)
 - If dependency issues found, warn but continue: "⚠️ Task dependency warning: {details}"
 
 ### 9. Update Epic with Task Summary
 After creating all tasks, update the epic file by adding this section:
 ```markdown
 ## Tasks Created
-- [ ] 001.md - {Task Title} (parallel: true/false)
-- [ ] 002.md - {Task Title} (parallel: true/false)
+- [ ] ABC001.md - {Task Title} (parallel: true/false)
+- [ ] ABC002.md - {Task Title} (parallel: true/false)
 - etc.
 
 Total tasks: {count}

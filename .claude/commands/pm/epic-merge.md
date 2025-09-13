@@ -78,7 +78,7 @@ echo "Merging epic/$ARGUMENTS to main..."
 git merge epic/$ARGUMENTS --no-ff -m "Merge epic: $ARGUMENTS
 
 Completed features:
-$(cd .claude/epics/$ARGUMENTS && ls *.md | grep -E '^[0-9]+' | while read f; do
+$(cd .claude/epics/$ARGUMENTS && ls *.md | grep -E '^[A-Z][A-Z][A-Z][0-9][0-9][0-9]' | while read f; do
   echo "- $(grep '^name:' $f | cut -d: -f2)"
 done)
 
@@ -147,7 +147,7 @@ epic_issue=$(grep 'github:' .claude/epics/archived/$ARGUMENTS/epic.md | grep -oE
 gh issue close $epic_issue -c "Epic completed and merged to main"
 
 # Close task issues
-for task_file in .claude/epics/archived/$ARGUMENTS/[0-9]*.md; do
+for task_file in .claude/epics/archived/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md; do
   issue_num=$(grep 'github:' $task_file | grep -oE '[0-9]+$')
   if [ ! -z "$issue_num" ]; then
     gh issue close $issue_num -c "Completed in epic merge"

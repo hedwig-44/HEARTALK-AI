@@ -42,7 +42,7 @@ if [ ! -z "$epic_issue" ]; then
   gh issue view $epic_issue --json body -q .body > /tmp/epic-body.md
   
   # For each task, check its status and update checkbox
-  for task_file in .claude/epics/$ARGUMENTS/[0-9]*.md; do
+  for task_file in .claude/epics/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md; do
     task_issue=$(grep 'github:' $task_file | grep -oE '[0-9]+$')
     task_status=$(grep 'status:' $task_file | cut -d: -f2 | tr -d ' ')
     

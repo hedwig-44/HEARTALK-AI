@@ -10,20 +10,20 @@ Use the `date` command to get the current ISO 8601 formatted datetime:
 
 ```bash
 # Get current datetime in ISO 8601 format (works on Linux/Mac)
-date -u +"%Y-%m-%dT%H:%M:%SZ"
+TZ='Asia/Shanghai' date +"%Y-%m-%dT%H:%M:%S UTC+8"
 
 # Alternative for systems that support it
 date --iso-8601=seconds
 
 # For Windows (if using PowerShell)
-Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
+Get-Date -Format "yyyy-MM-ddTHH:mm:ss UTC+8"
 ```
 
 ### Required Format
 
 All dates in frontmatter MUST use ISO 8601 format with UTC timezone:
-- Format: `YYYY-MM-DDTHH:MM:SSZ`
-- Example: `2024-01-15T14:30:45Z`
+- Format: `YYYY-MM-DDTHH:MM:SS UTC+8`
+- Example: `2024-01-15T22:30:45 UTC+8`
 
 ### Usage in Frontmatter
 
@@ -32,15 +32,15 @@ When creating or updating frontmatter in any file (PRD, Epic, Task, Progress), a
 ```yaml
 ---
 name: feature-name
-created: 2024-01-15T14:30:45Z  # Use actual output from date command
-updated: 2024-01-15T14:30:45Z  # Use actual output from date command
+created: 2024-01-15T22:30:45 UTC+8  # Use actual output from date command
+updated: 2024-01-15T22:30:45 UTC+8  # Use actual output from date command
 ---
 ```
 
 ### Implementation Instructions
 
 1. **Before writing any file with frontmatter:**
-   - Run: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
+   - Run: `TZ='Asia/Shanghai' date +"%Y-%m-%dT%H:%M:%S UTC+8"`
    - Store the output
    - Use this exact value in the frontmatter
 
@@ -60,29 +60,29 @@ updated: 2024-01-15T14:30:45Z  # Use actual output from date command
 **Creating a new PRD:**
 ```bash
 # First, get current datetime
-CURRENT_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-# Output: 2024-01-15T14:30:45Z
+CURRENT_DATE=$(TZ='Asia/Shanghai' date +"%Y-%m-%dT%H:%M:%S UTC+8")
+# Output: 2024-01-15T22:30:45 UTC+8
 
 # Then use in frontmatter:
 ---
 name: user-authentication
 description: User authentication and authorization system
 status: backlog
-created: 2024-01-15T14:30:45Z  # Use the actual $CURRENT_DATE value
+created: 2024-01-15T22:30:45 UTC+8  # Use the actual $CURRENT_DATE value
 ---
 ```
 
 **Updating an existing task:**
 ```bash
 # Get current datetime for update
-UPDATE_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+UPDATE_DATE=$(TZ='Asia/Shanghai' date +"%Y-%m-%dT%H:%M:%S UTC+8")
 
 # Update only the 'updated' field:
 ---
 name: implement-login-api
 status: in-progress
-created: 2024-01-10T09:15:30Z  # Keep original
-updated: 2024-01-15T14:30:45Z  # Use new $UPDATE_DATE value
+created: 2024-01-10T09:15:30 UTC+8  # Keep original
+updated: 2024-01-15T22:30:45 UTC+8  # Use new $UPDATE_DATE value
 ---
 ```
 
@@ -90,8 +90,8 @@ updated: 2024-01-15T14:30:45Z  # Use new $UPDATE_DATE value
 
 - **Never use placeholder dates** like `[Current ISO date/time]` or `YYYY-MM-DD`
 - **Never estimate dates** - always get the actual system time
-- **Always use UTC** (the `Z` suffix) for consistency across timezones
-- **Preserve timezone consistency** - all dates in the system use UTC
+- **Always use UTC+8** for consistency across timezones
+- **Preserve timezone consistency** - all dates in the system use UTC+8
 
 ### Cross-Platform Compatibility
 
@@ -99,12 +99,12 @@ If you need to ensure compatibility across different systems:
 
 ```bash
 # Try primary method first
-date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
+TZ='Asia/Shanghai' date +"%Y-%m-%dT%H:%M:%S UTC+8" 2>/dev/null || \
 # Fallback for systems without -u flag
 date +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
 # Last resort: use Python if available
-python3 -c "from datetime import datetime; print(datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))" 2>/dev/null || \
-python -c "from datetime import datetime; print(datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))" 2>/dev/null
+python3 -c "from datetime import datetime, timezone, timedelta; print(datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%dT%H:%M:%S UTC+8'))" 2>/dev/null || \
+python -c "from datetime import datetime, timezone, timedelta; print(datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%dT%H:%M:%S UTC+8'))" 2>/dev/null
 ```
 
 ## Rule Priority

@@ -55,7 +55,7 @@ mkdir -p .claude/epics/{epic_name}
 
 **If Task:**
 ```bash
-# Find next available number (001.md, 002.md, etc.)
+# Find next available Epic-prefixed number (ABC001.md, ABC002.md, etc.)
 # Create task file with GitHub content
 ```
 

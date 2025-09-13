@@ -51,7 +51,7 @@ fi
 # Search in Tasks
 if [ -d ".claude/epics" ]; then
   echo "📝 Tasks:"
-  results=$(find .claude/epics -name "[0-9]*.md" -exec grep -l -i "$query" {} \; 2>/dev/null | head -10)
+  results=$(find .claude/epics -name "[A-Z][A-Z][A-Z][0-9][0-9][0-9].md" -exec grep -l -i "$query" {} \; 2>/dev/null | head -10)
   if [ -n "$results" ]; then
     for file in $results; do
       epic_name=$(basename $(dirname "$file"))

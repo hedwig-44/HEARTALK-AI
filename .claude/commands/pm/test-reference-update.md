@@ -20,43 +20,46 @@ Create test task files with references:
 mkdir -p /tmp/test-refs
 cd /tmp/test-refs
 
-# Create task 001
-cat > 001.md << 'EOF'
+# Create task ABC001
+cat > ABC001.md << 'EOF'
 ---
+id: "ABC001"
 name: Task One
 status: open
 depends_on: []
 parallel: true
-conflicts_with: [002, 003]
+conflicts_with: ["ABC002", "ABC003"]
 ---
 # Task One
-This is task 001.
+This is task ABC001.
 EOF
 
-# Create task 002
-cat > 002.md << 'EOF'
+# Create task ABC002
+cat > ABC002.md << 'EOF'
 ---
+id: "ABC002"
 name: Task Two
 status: open
-depends_on: [001]
+depends_on: ["ABC001"]
 parallel: false
-conflicts_with: [003]
+conflicts_with: ["ABC003"]
 ---
 # Task Two
-This is task 002, depends on 001.
+This is task ABC002, depends on ABC001.
 EOF
 
-# Create task 003
-cat > 003.md << 'EOF'
+# Create task ABC003
+cat > ABC003.md << 'EOF'
 ---
+id: "ABC003"
 name: Task Three
 status: open
-depends_on: [001, 002]
+depends_on: ["ABC001", "ABC002"]
 parallel: false
 conflicts_with: []
 ---
 # Task Three
-This is task 003, depends on 001 and 002.
+This is task ABC003, depends on ABC001 and ABC002.
 EOF
 ```
 
@@ -64,57 +67,48 @@ EOF
 
 Simulate the issue creation mappings:
 ```bash
-# Simulate task -> issue number mapping
+# Simulate Epic task -> issue number mapping
 cat > /tmp/task-mapping.txt << 'EOF'
-001.md:42
-002.md:43
-003.md:44
+ABC001.md:42
+ABC002.md:43
+ABC003.md:44
 EOF
 
-# Create old -> new ID mapping
-> /tmp/id-mapping.txt
-while IFS=: read -r task_file task_number; do
-  old_num=$(basename "$task_file" .md)
-  echo "$old_num:$task_number" >> /tmp/id-mapping.txt
-done < /tmp/task-mapping.txt
-
-echo "ID Mapping:"
-cat /tmp/id-mapping.txt
+# With Epic-prefixed format, we keep filenames unchanged
+# Only update GitHub URLs in frontmatter
+echo "Epic Task -> GitHub Issue Mapping:"
+cat /tmp/task-mapping.txt
 ```
 
-### 3. Update References
+### 3. Update GitHub URLs
 
-Process each file and update references:
+Process each file and update GitHub URLs in frontmatter:
 ```bash
 while IFS=: read -r task_file task_number; do
-  echo "Processing: $task_file -> $task_number.md"
+  echo "Processing: $task_file -> GitHub Issue #$task_number"
   
-  # Read the file content
-  content=$(cat "$task_file")
+  # Keep Epic-prefixed filename, only update GitHub URL
+  repo="owner/repo"  # Replace with actual repo
+  github_url="https://github.com/$repo/issues/$task_number"
   
-  # Update references
-  while IFS=: read -r old_num new_num; do
-    content=$(echo "$content" | sed "s/\b$old_num\b/$new_num/g")
-  done < /tmp/id-mapping.txt
+  # Update frontmatter (no dependency reference changes needed)
+  sed -i.bak "/^github:/c\github: $github_url" "$task_file"
+  rm "${task_file}.bak"
   
-  # Write to new file
-  new_name="${task_number}.md"
-  echo "$content" > "$new_name"
-  
-  echo "Updated content preview:"
-  grep -E "depends_on:|conflicts_with:" "$new_name"
+  echo "Updated GitHub URL for $task_file"
+  grep "github:" "$task_file"
   echo "---"
 done < /tmp/task-mapping.txt
 ```
 
 ### 4. Verify Results
 
-Check that references were updated correctly:
+Check that Epic-prefixed files maintain their dependencies and have GitHub URLs:
 ```bash
 echo "=== Final Results ==="
-for file in 42.md 43.md 44.md; do
+for file in ABC001.md ABC002.md ABC003.md; do
   echo "File: $file"
-  grep -E "name:|depends_on:|conflicts_with:" "$file"
+  grep -E "id:|name:|depends_on:|conflicts_with:|github:" "$file"
   echo ""
 done
 ```

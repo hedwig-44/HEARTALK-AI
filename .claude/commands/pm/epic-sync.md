@@ -4,7 +4,7 @@ allowed-tools: Bash, Read, Write, LS, Task
 
 # Epic Sync
 
-Push epic and tasks to GitHub as issues.
+Push epic and tasks to GitHub as issues while preserving Epic-prefixed task IDs.
 
 ## Usage
 ```
@@ -17,7 +17,7 @@ Push epic and tasks to GitHub as issues.
 # Verify epic exists
 test -f .claude/epics/$ARGUMENTS/epic.md || echo "❌ Epic not found. Run: /pm:prd-parse $ARGUMENTS"
 
-# Count task files
+# Count Epic-prefixed task files
 ls .claude/epics/$ARGUMENTS/*.md 2>/dev/null | grep -v epic.md | wc -l
 ```
 
@@ -128,9 +128,9 @@ else
 fi
 ```
 
-Count task files to determine strategy:
+Count Epic-prefixed task files to determine strategy:
 ```bash
-task_count=$(ls .claude/epics/$ARGUMENTS/[0-9][0-9][0-9].md 2>/dev/null | wc -l)
+task_count=$(ls .claude/epics/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md 2>/dev/null | wc -l)
 ```
 
 ### For Small Batches (< 5 tasks): Sequential Creation
@@ -138,7 +138,7 @@ task_count=$(ls .claude/epics/$ARGUMENTS/[0-9][0-9][0-9].md 2>/dev/null | wc -l)
 ```bash
 if [ "$task_count" -lt 5 ]; then
   # Create sequentially for small batches
-  for task_file in .claude/epics/$ARGUMENTS/[0-9][0-9][0-9].md; do
+  for task_file in .claude/epics/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md; do
     [ -f "$task_file" ] || continue
 
     # Extract task name from frontmatter
@@ -163,12 +163,12 @@ if [ "$task_count" -lt 5 ]; then
         --json number -q .number)
     fi
 
-    # Record mapping for renaming
+    # Record mapping (but keep Epic-prefixed filenames)
     echo "$task_file:$task_number" >> /tmp/task-mapping.txt
   done
 
-  # After creating all issues, update references and rename files
-  # This follows the same process as step 3 below
+  # After creating all issues, update GitHub URLs in frontmatter
+  # DO NOT rename files - keep Epic-prefixed names
 fi
 ```
 
@@ -231,52 +231,26 @@ cat /tmp/batch-*/mapping.txt >> /tmp/task-mapping.txt
 # 3. Rename files with proper frontmatter updates
 ```
 
-### 3. Rename Task Files and Update References
+### 3. Update Task Files with GitHub URLs
 
-First, build a mapping of old numbers to new issue IDs:
+**IMPORTANT: Keep Epic-prefixed filenames, only update frontmatter**
+
 ```bash
-# Create mapping from old task numbers (001, 002, etc.) to new issue IDs
-> /tmp/id-mapping.txt
+# Process each task file - DO NOT rename files
 while IFS=: read -r task_file task_number; do
-  # Extract old number from filename (e.g., 001 from 001.md)
-  old_num=$(basename "$task_file" .md)
-  echo "$old_num:$task_number" >> /tmp/id-mapping.txt
-done < /tmp/task-mapping.txt
-```
-
-Then rename files and update all references:
-```bash
-# Process each task file
-while IFS=: read -r task_file task_number; do
-  new_name="$(dirname "$task_file")/${task_number}.md"
-
-  # Read the file content
-  content=$(cat "$task_file")
-
-  # Update depends_on and conflicts_with references
-  while IFS=: read -r old_num new_num; do
-    # Update arrays like [001, 002] to use new issue numbers
-    content=$(echo "$content" | sed "s/\b$old_num\b/$new_num/g")
-  done < /tmp/id-mapping.txt
-
-  # Write updated content to new file
-  echo "$content" > "$new_name"
-
-  # Remove old file if different from new
-  [ "$task_file" != "$new_name" ] && rm "$task_file"
-
-  # Update github field in frontmatter
-  # Add the GitHub URL to the frontmatter
+  # Keep the Epic-prefixed filename (e.g., ABC001.md)
+  # Only update GitHub URL in frontmatter
+  
   repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
   github_url="https://github.com/$repo/issues/$task_number"
-
-  # Update frontmatter with GitHub URL and current timestamp
   current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-  # Use sed to update the github and updated fields
-  sed -i.bak "/^github:/c\github: $github_url" "$new_name"
-  sed -i.bak "/^updated:/c\updated: $current_date" "$new_name"
-  rm "${new_name}.bak"
+  # Update frontmatter with GitHub URL and timestamp
+  sed -i.bak "/^github:/c\github: $github_url" "$task_file"
+  sed -i.bak "/^updated:/c\updated: $current_date" "$task_file"
+  rm "${task_file}.bak"
+  
+  echo "Updated $(basename "$task_file") → GitHub Issue #$task_number"
 done < /tmp/task-mapping.txt
 ```
 
@@ -329,12 +303,16 @@ cat > /tmp/tasks-section.md << 'EOF'
 ## Tasks Created
 EOF
 
-# Add each task with its real issue number
-for task_file in .claude/epics/$ARGUMENTS/[0-9]*.md; do
+# Add each task with Epic ID and GitHub issue mapping
+for task_file in .claude/epics/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md; do
   [ -f "$task_file" ] || continue
 
-  # Get issue number (filename without .md)
-  issue_num=$(basename "$task_file" .md)
+  # Get Epic task ID from frontmatter
+  epic_task_id=$(grep '^id:' "$task_file" | sed 's/^id: *["']\?\([^"']*\)["']\?.*/\1/')
+  
+  # Get GitHub issue number from frontmatter
+  github_url=$(grep '^github:' "$task_file" | sed 's/^github: *//')
+  issue_num=$(echo "$github_url" | sed 's|.*/||')
 
   # Get task name from frontmatter
   task_name=$(grep '^name:' "$task_file" | sed 's/^name: *//')
@@ -342,13 +320,13 @@ for task_file in .claude/epics/$ARGUMENTS/[0-9]*.md; do
   # Get parallel status
   parallel=$(grep '^parallel:' "$task_file" | sed 's/^parallel: *//')
 
-  # Add to tasks section
-  echo "- [ ] #${issue_num} - ${task_name} (parallel: ${parallel})" >> /tmp/tasks-section.md
+  # Add to tasks section with Epic ID mapping
+  echo "- [ ] ${epic_task_id} → #${issue_num} - ${task_name} (parallel: ${parallel})" >> /tmp/tasks-section.md
 done
 
 # Add summary statistics
-total_count=$(ls .claude/epics/$ARGUMENTS/[0-9]*.md 2>/dev/null | wc -l)
-parallel_count=$(grep -l '^parallel: true' .claude/epics/$ARGUMENTS/[0-9]*.md 2>/dev/null | wc -l)
+total_count=$(ls .claude/epics/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md 2>/dev/null | wc -l)
+parallel_count=$(grep -l '^parallel: true' .claude/epics/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md 2>/dev/null | wc -l)
 sequential_count=$((total_count - parallel_count))
 
 cat >> /tmp/tasks-section.md << EOF
@@ -382,23 +360,25 @@ rm /tmp/tasks-section.md
 
 Create `.claude/epics/$ARGUMENTS/github-mapping.md`:
 ```bash
-# Create mapping file
+# Create mapping file with Epic-to-GitHub mapping
 cat > .claude/epics/$ARGUMENTS/github-mapping.md << EOF
-# GitHub Issue Mapping
+# Epic ABC (${ARGUMENTS}) GitHub Mapping
 
 Epic: #${epic_number} - https://github.com/${repo}/issues/${epic_number}
 
-Tasks:
+Epic Task → GitHub Issue
 EOF
 
 # Add each task mapping
-for task_file in .claude/epics/$ARGUMENTS/[0-9]*.md; do
+for task_file in .claude/epics/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md; do
   [ -f "$task_file" ] || continue
 
-  issue_num=$(basename "$task_file" .md)
+  epic_task_id=$(grep '^id:' "$task_file" | sed 's/^id: *["']\?\([^"']*\)["']\?.*/\1/')
   task_name=$(grep '^name:' "$task_file" | sed 's/^name: *//')
+  github_url=$(grep '^github:' "$task_file" | sed 's/^github: *//')
+  issue_num=$(echo "$github_url" | sed 's|.*/||')
 
-  echo "- #${issue_num}: ${task_name} - https://github.com/${repo}/issues/${issue_num}" >> .claude/epics/$ARGUMENTS/github-mapping.md
+  echo "- ${epic_task_id}.md → #${issue_num}: ${task_name}" >> .claude/epics/$ARGUMENTS/github-mapping.md
 done
 
 # Add sync timestamp
@@ -428,8 +408,9 @@ echo "✅ Created worktree: ../epic-$ARGUMENTS"
   - Epic: #{epic_number} - {epic_title}
   - Tasks: {count} sub-issues created
   - Labels applied: epic, task, epic:{name}
-  - Files renamed: 001.md → {issue_id}.md
-  - References updated: depends_on/conflicts_with now use issue IDs
+  - Files preserved: ABC001.md format maintained
+  - GitHub URLs updated: frontmatter contains GitHub issue links
+  - Epic dependencies preserved: depends_on/conflicts_with use Epic IDs
   - Worktree: ../epic-$ARGUMENTS
 
 Next steps:
@@ -443,13 +424,16 @@ Next steps:
 Follow `/rules/github-operations.md` for GitHub CLI errors.
 
 If any issue creation fails:
-- Report what succeeded
+- Report what succeeded  
 - Note what failed
 - Don't attempt rollback (partial sync is fine)
+- Epic-prefixed files remain intact
 
 ## Important Notes
 
 - Trust GitHub CLI authentication
 - Don't pre-check for duplicates
 - Update frontmatter only after successful creation
-- Keep operations simple and atomic
+- Keep Epic-prefixed filenames intact (ABC001.md format)
+- GitHub issue numbers only used for external linking
+- Epic task IDs remain stable for dependency management
