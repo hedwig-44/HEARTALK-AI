@@ -34,12 +34,24 @@ Launch parallel agents to work on epic tasks in a shared worktree.
 Follow `/rules/worktree-operations.md`:
 
 ```bash
+# Record current branch as source branch
+current_branch=$(git branch --show-current)
+echo "📝 Recording source branch: $current_branch"
+
+# Update epic.md frontmatter to include source branch
+if grep -q '^source_branch:' .claude/epics/$ARGUMENTS/epic.md; then
+  sed -i.bak "s/^source_branch:.*/source_branch: $current_branch/" .claude/epics/$ARGUMENTS/epic.md
+else
+  # Add source_branch after the status line
+  sed -i.bak "/^status:/a\
+source_branch: $current_branch" .claude/epics/$ARGUMENTS/epic.md
+fi
+rm -f .claude/epics/$ARGUMENTS/epic.md.bak
+
 # If worktree doesn't exist, create it
 if ! git worktree list | grep -q "epic-$ARGUMENTS"; then
-  git checkout main
-  git pull origin main
   git worktree add ../epic-$ARGUMENTS -b epic/$ARGUMENTS
-  echo "✅ Created worktree: ../epic-$ARGUMENTS"
+  echo "✅ Created worktree: ../epic-$ARGUMENTS from $current_branch"
 else
   echo "✅ Using existing worktree: ../epic-$ARGUMENTS"
 fi

@@ -139,76 +139,36 @@ name: [Task Title]
 status: open
 created: [preserve existing date]
 updated: [Use REAL datetime from command above]
-github: https://github.com/{org}/{repo}/issues/$ARGUMENTS
+github_url: https://github.com/{org}/{repo}/issues/$ARGUMENTS
 ---
 ```
 
-### 7. Handle Completion
-If task is complete, update all relevant frontmatter:
+### 7. Check for Completion and Provide Guidance
 
-**Task file frontmatter**:
-```yaml
----
-name: [Task Title]
-status: closed
-created: [existing date]
-updated: [current date/time]
-github: https://github.com/{org}/{repo}/issues/$ARGUMENTS
----
+After updating progress, check if task is complete:
+```bash
+# Calculate completion percentage
+completion=$(grep '^completion:' "$progress_file" | sed 's/completion: *//' | tr -d '%')
+
+if [ "$completion" -ge 100 ]; then
+  echo ""
+  echo "🎯 Task completion detected! (${completion}%)"
+  echo "📋 Next: Run '/pm:issue-close $ARGUMENTS' to finalize closure"
+  echo ""
+
+  # Add completion readiness note to the update comment
+  cat >> /tmp/update-comment.md << EOF
+
+### 🎯 Task Ready for Closure
+This task appears to be complete based on progress tracking.
+All acceptance criteria and deliverables should be verified before closing.
+
+**Next Action**: Run \`/pm:issue-close $ARGUMENTS\` to finalize completion.
+EOF
+fi
 ```
 
-**Progress file frontmatter**:
-```yaml
----
-issue: $ARGUMENTS
-started: [existing date]
-last_sync: [current date/time]
-completion: 100%
----
-```
-
-**Epic progress update**: Recalculate epic progress based on completed tasks and update epic frontmatter:
-```yaml
----
-name: [Epic Name]
-status: in-progress
-created: [existing date]
-progress: [calculated percentage based on completed tasks]%
-prd: [existing path]
-github: [existing URL]
----
-```
-
-### 8. Completion Comment
-If task is complete:
-```markdown
-## ✅ Task Completed - {current_date}
-
-### 🎯 All Acceptance Criteria Met
-- ✅ {criterion_1}
-- ✅ {criterion_2}
-- ✅ {criterion_3}
-
-### 📦 Deliverables
-- {deliverable_1}
-- {deliverable_2}
-
-### 🧪 Testing
-- Unit tests: ✅ Passing
-- Integration tests: ✅ Passing
-- Manual testing: ✅ Complete
-
-### 📚 Documentation
-- Code documentation: ✅ Updated
-- README updates: ✅ Complete
-
-This task is ready for review and can be closed.
-
----
-*Task completed: 100% | Synced at {timestamp}*
-```
-
-### 9. Output Summary
+### 8. Output Summary
 ```
 ☁️ Synced updates to GitHub Issue #$ARGUMENTS
 
@@ -225,13 +185,13 @@ This task is ready for review and can be closed.
 🔗 View update: gh issue view #$ARGUMENTS --comments
 ```
 
-### 10. Frontmatter Maintenance
+### 9. Frontmatter Maintenance
 - Always update task file frontmatter with current timestamp
 - Track completion percentages in progress files
-- Update epic progress when tasks complete
 - Maintain sync timestamps for audit trail
+- **Note**: Epic progress updates (after completion) are handled by `/pm:issue-close` to maintain single responsibility
 
-### 11. Incremental Sync Detection
+### 10. Incremental Sync Detection
 
 **Prevent Duplicate Comments:**
 1. Add sync markers to local files after each sync:
@@ -241,7 +201,7 @@ This task is ready for review and can be closed.
 2. Only sync content added after the last marker
 3. If no new content, skip sync with message: "No updates since last sync"
 
-### 12. Comment Size Management
+### 11. Comment Size Management
 
 **Handle GitHub's Comment Limits:**
 - Max comment size: 65,536 characters
@@ -250,7 +210,7 @@ This task is ready for review and can be closed.
   2. Or summarize with link to full details
   3. Warn user: "⚠️ Update truncated due to size. Full details in local files."
 
-### 13. Error Handling
+### 12. Error Handling
 
 **Common Issues and Recovery:**
 
@@ -272,21 +232,12 @@ This task is ready for review and can be closed.
    - Message: "⚠️ Issue is locked for comments"
    - Solution: "Contact repository admin to unlock"
 
-### 14. Epic Progress Calculation
-
-When updating epic progress:
-1. Count total tasks in epic directory
-2. Count tasks with `status: closed` in frontmatter
-3. Calculate: `progress = (closed_tasks / total_tasks) * 100`
-4. Round to nearest integer
-5. Update epic frontmatter only if percentage changed
-
-### 15. Post-Sync Validation
+### 13. Post-Sync Validation
 
 After successful sync:
 - [ ] Verify comment posted on GitHub
 - [ ] Confirm frontmatter updated with sync timestamp
-- [ ] Check epic progress updated if task completed
 - [ ] Validate no data corruption in local files
+- [ ] Check if completion guidance was provided to user
 
-This creates a transparent audit trail of development progress that stakeholders can follow in real-time for Issue #$ARGUMENTS, while maintaining accurate frontmatter across all project files.
+This creates a transparent audit trail of development progress that stakeholders can follow in real-time for Issue #$ARGUMENTS, while maintaining accurate frontmatter across all project files. Final completion and closure are handled by `/pm:issue-close` to maintain single responsibility.

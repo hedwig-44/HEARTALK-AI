@@ -46,13 +46,25 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
+# Record current branch as source branch
+current_branch=$(git branch --show-current)
+echo "📝 Recording source branch: $current_branch"
+
+# Update epic.md frontmatter to include source branch
+if grep -q '^source_branch:' .claude/epics/$ARGUMENTS/epic.md; then
+  sed -i.bak "s/^source_branch:.*/source_branch: $current_branch/" .claude/epics/$ARGUMENTS/epic.md
+else
+  # Add source_branch after the status line
+  sed -i.bak "/^status:/a\
+source_branch: $current_branch" .claude/epics/$ARGUMENTS/epic.md
+fi
+rm -f .claude/epics/$ARGUMENTS/epic.md.bak
+
 # If branch doesn't exist, create it
 if ! git branch -a | grep -q "epic/$ARGUMENTS"; then
-  git checkout main
-  git pull origin main
   git checkout -b epic/$ARGUMENTS
   git push -u origin epic/$ARGUMENTS
-  echo "✅ Created branch: epic/$ARGUMENTS"
+  echo "✅ Created branch: epic/$ARGUMENTS from $current_branch"
 else
   git checkout epic/$ARGUMENTS
   git pull origin epic/$ARGUMENTS

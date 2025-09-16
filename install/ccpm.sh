@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO_URL="https://github.com/automazeio/ccpm.git"
+REPO_URL="https://github.com/sionocean/ccpm.git"
 TARGET_DIR="."
 
 echo "Cloning repository from $REPO_URL..."

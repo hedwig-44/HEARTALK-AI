@@ -63,26 +63,44 @@ Update `.claude/epics/$ARGUMENTS/epic.md`:
 - Update completion date
 - Add final summary
 
-### 4. Attempt Merge
+### 4. Determine Target Branch and Attempt Merge
 
 ```bash
 # Return to main repository
 cd {main-repo-path}
 
-# Ensure main is up to date
-git checkout main
-git pull origin main
+# Get target branch from epic metadata
+target_branch=$(grep '^source_branch:' .claude/epics/$ARGUMENTS/epic.md | sed 's/source_branch: *//')
+if [ -z "$target_branch" ]; then
+  # Fallback to main for backward compatibility
+  target_branch="main"
+  echo "⚠️ No source branch recorded, using main as fallback"
+else
+  echo "✅ Merging back to source branch: $target_branch"
+fi
+
+# Verify target branch exists
+if ! git show-ref --verify --quiet refs/heads/$target_branch; then
+  echo "❌ Target branch does not exist: $target_branch"
+  echo "Available branches:"
+  git branch -a
+  exit 1
+fi
+
+# Ensure target branch is up to date
+git checkout $target_branch
+git pull origin $target_branch
 
 # Attempt merge
-echo "Merging epic/$ARGUMENTS to main..."
-git merge epic/$ARGUMENTS --no-ff -m "Merge epic: $ARGUMENTS
+echo "Merging epic/$ARGUMENTS to $target_branch..."
+git merge epic/$ARGUMENTS --no-ff -m "Merge epic: $ARGUMENTS → $target_branch
 
 Completed features:
 $(cd .claude/epics/$ARGUMENTS && ls *.md | grep -E '^[A-Z][A-Z][A-Z][0-9][0-9][0-9]' | while read f; do
   echo "- $(grep '^name:' $f | cut -d: -f2)"
 done)
 
-Closes epic #$(grep 'github:' .claude/epics/$ARGUMENTS/epic.md | grep -oE '#[0-9]+')"
+Closes epic #$(grep 'github_url:' .claude/epics/$ARGUMENTS/epic.md | grep -oE '#[0-9]+')"
 ```
 
 ### 5. Handle Merge Conflicts
@@ -119,8 +137,8 @@ exit 1
 
 If merge succeeds:
 ```bash
-# Push to remote
-git push origin main
+# Push to remote target branch
+git push origin $target_branch
 
 # Clean up worktree
 git worktree remove ../epic-$ARGUMENTS
@@ -131,9 +149,9 @@ git branch -d epic/$ARGUMENTS
 git push origin --delete epic/$ARGUMENTS 2>/dev/null || true
 
 # Archive epic locally
-mkdir -p .claude/epics/archived/
-mv .claude/epics/$ARGUMENTS .claude/epics/archived/
-echo "✅ Epic archived: .claude/epics/archived/$ARGUMENTS"
+mkdir -p .claude/epics/.archived/
+mv .claude/epics/$ARGUMENTS .claude/epics/.archived/
+echo "✅ Epic archived: .claude/epics/.archived/$ARGUMENTS"
 ```
 
 ### 7. Update GitHub Issues
@@ -141,14 +159,14 @@ echo "✅ Epic archived: .claude/epics/archived/$ARGUMENTS"
 Close related issues:
 ```bash
 # Get issue numbers from epic
-epic_issue=$(grep 'github:' .claude/epics/archived/$ARGUMENTS/epic.md | grep -oE '[0-9]+$')
+epic_issue=$(grep 'github_url:' .claude/epics/.archived/$ARGUMENTS/epic.md | grep -oE '[0-9]+$')
 
 # Close epic issue
-gh issue close $epic_issue -c "Epic completed and merged to main"
+gh issue close $epic_issue -c "Epic completed and merged to $target_branch"
 
 # Close task issues
-for task_file in .claude/epics/archived/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md; do
-  issue_num=$(grep 'github:' $task_file | grep -oE '[0-9]+$')
+for task_file in .claude/epics/.archived/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md; do
+  issue_num=$(grep 'github_url:' $task_file | grep -oE '[0-9]+$')
   if [ ! -z "$issue_num" ]; then
     gh issue close $issue_num -c "Completed in epic merge"
   fi
@@ -161,17 +179,18 @@ done
 ✅ Epic Merged Successfully: $ARGUMENTS
 
 Summary:
-  Branch: epic/$ARGUMENTS → main
+  Branch: epic/$ARGUMENTS → $target_branch
+  Source: $(grep '^source_branch:' .claude/epics/.archived/$ARGUMENTS/epic.md | sed 's/source_branch: *//' || echo 'main (fallback)')
   Commits merged: {count}
   Files changed: {count}
   Issues closed: {count}
-  
+
 Cleanup completed:
   ✓ Worktree removed
   ✓ Branch deleted
   ✓ Epic archived
   ✓ GitHub issues closed
-  
+
 Next steps:
   - Deploy changes if needed
   - Start new epic: /pm:prd-new {feature}

@@ -83,28 +83,37 @@ Task:
 
     For each task:
     1. Create file: .claude/epics/$ARGUMENTS/{epic_code}{number}.md (e.g., ABC001.md)
-    2. Use exact format with frontmatter and all sections
+    2. Use the EXACT frontmatter format specified below
     3. Follow task breakdown from epic
     4. Set parallel/depends_on fields appropriately
     5. Number sequentially (ABC001.md, ABC002.md, etc.)
 
+    REQUIRED FRONTMATTER FORMAT: Use the exact structure defined in section "4. Task File Format with Frontmatter" below. Do not deviate from this format.
+
     Return: List of files created
 ```
 
-### 4. Task File Format with Frontmatter
-For each task, create a file with this exact structure:
+### 4. Task File Format with Frontmatter (AUTHORITATIVE TEMPLATE)
+For each task, create a file with this exact structure (this is the single source of truth for frontmatter format during task creation):
 
 ```markdown
 ---
-id: "ABC001"  # Epic code + 3-digit number
-name: [Task Title]
-status: open
+id: ABC001  # Epic code + 3-digit number (no quotes)
+epic: login-page-redesign  # Epic name
+title: "Task Title"  # Descriptive task title in quotes
+status: open  # Initial status for new tasks
+github_url: "[Will be updated when synced to GitHub]"
+priority: medium  # high/medium/low
 created: [Current ISO date/time]
 updated: [Current ISO date/time]
-github: [Will be updated when synced to GitHub]
-depends_on: ["ABC002"]  # Epic-prefixed task IDs this depends on
-parallel: true  # Can this run in parallel with other tasks?
-conflicts_with: ["ABC003"]  # Epic-prefixed task IDs that conflict
+assignee: unassigned
+labels: []  # Array of relevant labels
+dependencies: []  # Array of task IDs this depends on (e.g., [ABC001, ABC002])
+depends_on: []  # Epic-prefixed task IDs that must complete before this can start
+parallel: true  # Can this run alongside other tasks without conflicts
+conflicts_with: []  # Epic-prefixed task IDs that modify the same files
+estimated_hours: 0  # Estimated effort in hours
+actual_hours: 0  # Actual time spent (starts at 0)
 ---
 
 # Task: [Task Title]
@@ -139,22 +148,31 @@ Clear, concise description of what needs to be done
 - [ ] Deployed to staging
 ```
 
-### 3. Task Naming Convention
+### 5. Task Naming Convention
 Save tasks as: `.claude/epics/$ARGUMENTS/{epic_code}{number}.md`
 - Use Epic-prefixed numbering: ABC001.md, ABC002.md, etc.
 - Keep task titles short but descriptive
 
-### 4. Frontmatter Guidelines
-- **name**: Use a descriptive task title (without "Task:" prefix)
+### 6. Frontmatter Field Explanations
+Additional context and validation rules for the above template:
+- **id**: Epic code + 3-digit number (e.g., ABC001) without quotes
+- **epic**: The epic name (e.g., login-page-redesign)
+- **title**: Descriptive task title in quotes (without "Task:" prefix)
 - **status**: Always start with "open" for new tasks
+- **github_url**: Leave placeholder text - will be updated during sync
+- **priority**: Set as high/medium/low based on task importance
 - **created**: Get REAL current datetime by running: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
 - **updated**: Use the same real datetime as created for new tasks
-- **github**: Leave placeholder text - will be updated during sync
-- **depends_on**: List Epic-prefixed task IDs that must complete before this can start (e.g., ["ABC001", "ABC002"])
+- **assignee**: Always start with "unassigned"
+- **labels**: Array of relevant labels (e.g., [frontend, ui, api])
+- **dependencies**: Array of Epic-prefixed task IDs this depends on (e.g., [ABC001, ABC002])
+- **depends_on**: Array of Epic-prefixed task IDs that must complete before this can start (e.g., [ABC001, ABC002])
 - **parallel**: Set to true if this can run alongside other tasks without conflicts
-- **conflicts_with**: List Epic-prefixed task IDs that modify the same files (helps coordination)
+- **conflicts_with**: Array of Epic-prefixed task IDs that modify the same files (helps coordination)
+- **estimated_hours**: Estimated effort in hours (numeric value)
+- **actual_hours**: Always start with 0 for new tasks
 
-### 5. Task Types to Consider
+### 7. Task Types to Consider
 - **Setup tasks**: Environment, dependencies, scaffolding
 - **Data tasks**: Models, schemas, migrations
 - **API tasks**: Endpoints, services, integration
@@ -163,10 +181,10 @@ Save tasks as: `.claude/epics/$ARGUMENTS/{epic_code}{number}.md`
 - **Documentation tasks**: README, API docs
 - **Deployment tasks**: CI/CD, infrastructure
 
-### 6. Parallelization
+### 8. Parallelization
 Mark tasks with `parallel: true` if they can be worked on simultaneously without conflicts.
 
-### 7. Execution Strategy
+### 9. Execution Strategy
 
 Choose based on task count and complexity:
 
@@ -191,14 +209,14 @@ Spawning 3 agents for parallel task creation:
 - Agent 3: Creating tasks 007-009 (UI layer)
 ```
 
-### 8. Task Dependency Validation
+### 10. Task Dependency Validation
 
 When creating tasks with dependencies:
 - Ensure referenced dependencies exist (e.g., if ABC003 depends on ABC002, verify ABC002 was created)
 - Check for circular dependencies (ABC001 → ABC002 → ABC001)
 - If dependency issues found, warn but continue: "⚠️ Task dependency warning: {details}"
 
-### 9. Update Epic with Task Summary
+### 11. Update Epic with Task Summary
 After creating all tasks, update the epic file by adding this section:
 ```markdown
 ## Tasks Created
@@ -214,7 +232,7 @@ Estimated total effort: {sum of hours}
 
 Also update the epic's frontmatter progress if needed (still 0% until tasks actually start).
 
-### 9. Quality Validation
+### 12. Quality Validation
 
 Before finalizing tasks, verify:
 - [ ] All tasks have clear acceptance criteria
@@ -223,7 +241,7 @@ Before finalizing tasks, verify:
 - [ ] Parallel tasks don't conflict with each other
 - [ ] Combined tasks cover all epic requirements
 
-### 10. Post-Decomposition
+### 13. Post-Decomposition
 
 After successfully creating tasks:
 1. Confirm: "✅ Created {count} tasks for epic: $ARGUMENTS"
