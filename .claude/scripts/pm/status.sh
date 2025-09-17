@@ -1,7 +1,5 @@
 #!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$SCRIPT_DIR/workdir-type.sh"
-echo ""
+
 echo "Getting status..."
 echo ""
 echo ""

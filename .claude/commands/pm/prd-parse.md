@@ -15,6 +15,7 @@ Convert PRD to technical implementation epic.
 
 **IMPORTANT:** Before executing this command, read and follow:
 - `.claude/rules/datetime.md` - For getting real current date/time
+- `.claude/rules/detail-preservation.md` - For maintaining PRD detail granularity
 
 ## Preflight Checklist
 
@@ -50,16 +51,19 @@ Do not bother the user with preflight checks progress ("I'm not going to ..."). 
 
 You are a technical lead converting a Product Requirements Document into a detailed implementation epic for: **$ARGUMENTS**
 
-### 1. Read the PRD
+### 1. Read and Extract PRD Details
 - Load the PRD from `.claude/prds/$ARGUMENTS.md`
-- Analyze all requirements and constraints
-- Understand the user stories and success criteria
+- **Extract ALL specific requirements** - UI details, business rules, technical constraints, user flows
+- **Preserve granular details** - Don't summarize or generalize, maintain specific requirements
+- **Catalog complete requirements** - Every feature, component, interaction, and constraint mentioned
 - Extract the PRD description from frontmatter
 
-### 2. Technical Analysis
+### 2. Technical Translation (Preserve Details)
+- **Transform not simplify** - Convert product language to technical language while maintaining ALL specifics
+- **Map each requirement** - Every PRD requirement must have corresponding technical approach
 - Identify architectural decisions needed
 - Determine technology stack and approaches
-- Map functional requirements to technical components
+- Map functional requirements to technical components with same level of detail
 - Identify integration points and dependencies
 
 ### 3. File Format with Frontmatter
@@ -70,9 +74,11 @@ Create the epic file at: `.claude/epics/$ARGUMENTS/epic.md` with this exact stru
 name: $ARGUMENTS
 status: backlog
 created: [Current ISO date/time]
+updated: [Will be set when epic is modified]
 progress: 0%
 prd: .claude/prds/$ARGUMENTS.md
-github: [Will be updated when synced to GitHub]
+github_url: [Will be updated when synced to GitHub]
+source_branch: [Will be set when epic starts]
 ---
 
 # Epic: $ARGUMENTS
@@ -144,6 +150,9 @@ Create the directory structure if it doesn't exist:
 ### 6. Quality Validation
 
 Before saving the epic, verify:
+- [ ] **Detail preservation check** - Epic contains same level of specificity as PRD
+- [ ] **Complete requirement mapping** - Every PRD requirement has technical counterpart
+- [ ] **No unnecessary simplification** - Specific requirements weren't generalized
 - [ ] All PRD requirements are addressed in the technical approach
 - [ ] Task breakdown categories cover all implementation areas
 - [ ] Dependencies are technically accurate

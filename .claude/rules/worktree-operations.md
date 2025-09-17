@@ -4,25 +4,18 @@ Git worktrees enable parallel development by allowing multiple working directori
 
 ## Creating Worktrees
 
-Always create worktrees from a clean main branch:
+Always create worktrees from existing epic branch:
 ```bash
-# Ensure main is up to date
-git checkout main
-git pull origin main
+# Ensure epic branch exists
+git checkout epic/{name}
 
-# Create worktree for epic
-git worktree add ../epic-{name} -b epic/{name}
+# Create worktree from epic branch
+git worktree add ../epic-{name}
 ```
 
 The worktree will be created as a sibling directory to maintain clean separation.
 
 ## Working in Worktrees
-
-Before making any edits or commits, verify where you are working:
-
-```bash
-./.claude/scripts/pm/workdir-type.sh
-```
 
 ### Agent Commits
 - Agents commit directly to the worktree
@@ -111,7 +104,7 @@ cd ../epic-{name} && git status && cd -
 ## Best Practices
 
 1. **One worktree per epic** - Not per issue
-2. **Clean before create** - Always start from updated main
+2. **Epic branch first** - Ensure epic branch exists before creating worktree
 3. **Commit frequently** - Small commits are easier to merge
 4. **Delete after merge** - Don't leave stale worktrees
 5. **Use descriptive branches** - `epic/feature-name` not `feature`

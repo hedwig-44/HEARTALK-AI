@@ -19,7 +19,7 @@ Launch parallel agents to work on epic tasks in a shared worktree.
    ```
 
 2. **Check GitHub sync:**
-   Look for `github:` field in epic frontmatter.
+   Look for `github_url:` field in epic frontmatter.
    If missing: "❌ Epic not synced. Run: /pm:epic-sync $ARGUMENTS first"
 
 3. **Check for worktree:**
@@ -50,8 +50,16 @@ rm -f .claude/epics/$ARGUMENTS/epic.md.bak
 
 # If worktree doesn't exist, create it
 if ! git worktree list | grep -q "epic-$ARGUMENTS"; then
-  git worktree add ../epic-$ARGUMENTS -b epic/$ARGUMENTS
-  echo "✅ Created worktree: ../epic-$ARGUMENTS from $current_branch"
+  # Check if epic branch exists
+  if ! git branch -a | grep -q "epic/$ARGUMENTS"; then
+    echo "❌ Epic branch epic/$ARGUMENTS doesn't exist. Run: /pm:epic-sync $ARGUMENTS first"
+    exit 1
+  fi
+
+  # Create worktree from existing epic branch
+  git checkout epic/$ARGUMENTS
+  git worktree add ../epic-$ARGUMENTS
+  echo "✅ Created worktree: ../epic-$ARGUMENTS from epic/$ARGUMENTS"
 else
   echo "✅ Using existing worktree: ../epic-$ARGUMENTS"
 fi

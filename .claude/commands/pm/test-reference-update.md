@@ -92,11 +92,11 @@ while IFS=: read -r task_file task_number; do
   github_url="https://github.com/$repo/issues/$task_number"
   
   # Update frontmatter (no dependency reference changes needed)
-  sed -i.bak "/^github:/c\github: $github_url" "$task_file"
+  sed -i.bak "/^github_url:/c\github_url: $github_url" "$task_file"
   rm "${task_file}.bak"
-  
+
   echo "Updated GitHub URL for $task_file"
-  grep "github:" "$task_file"
+  grep "github_url:" "$task_file"
   echo "---"
 done < /tmp/task-mapping.txt
 ```
@@ -108,7 +108,7 @@ Check that Epic-prefixed files maintain their dependencies and have GitHub URLs:
 echo "=== Final Results ==="
 for file in ABC001.md ABC002.md ABC003.md; do
   echo "File: $file"
-  grep -E "id:|name:|depends_on:|conflicts_with:|github:" "$file"
+  grep -E "id:|name:|depends_on:|conflicts_with:|github_url:" "$file"
   echo ""
 done
 ```

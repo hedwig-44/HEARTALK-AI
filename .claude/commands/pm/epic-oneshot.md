@@ -28,7 +28,7 @@ if ls .claude/epics/$ARGUMENTS/[A-Z][A-Z][A-Z][0-9][0-9][0-9].md 2>/dev/null | g
 fi
 
 # Check if already synced
-if grep -q "github:" .claude/epics/$ARGUMENTS/epic.md; then
+if grep -q "github_url:" .claude/epics/$ARGUMENTS/epic.md; then
   echo "⚠️ Epic already synced to GitHub."
   echo "Use /pm:epic-sync to update."
   exit 1
@@ -57,8 +57,8 @@ Running: /pm:epic-sync $ARGUMENTS
 This will:
 - Create epic issue on GitHub
 - Create sub-issues (using parallel agents if appropriate)
-- Rename task files to issue IDs
-- Create worktree
+- Create epic branch from current branch
+- Create worktree from epic branch
 
 ### 4. Output
 

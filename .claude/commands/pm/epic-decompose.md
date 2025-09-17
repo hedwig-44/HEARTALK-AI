@@ -15,6 +15,7 @@ Break epic into concrete, actionable tasks with Epic-prefixed task IDs.
 
 **IMPORTANT:** Before executing this command, read and follow:
 - `.claude/rules/datetime.md` - For getting real current date/time
+- `.claude/rules/detail-preservation.md` - For maintaining Epic detail granularity in tasks
 
 ## Preflight Checklist
 
@@ -43,9 +44,11 @@ Do not bother the user with preflight checks progress ("I'm not going to ..."). 
 
 You are decomposing an epic into specific, actionable tasks for: **$ARGUMENTS**
 
-### 1. Read the Epic
+### 1. Read and Analyze Epic Details
 - Load the epic from `.claude/epics/$ARGUMENTS/epic.md`
-- Understand the technical approach and requirements
+- **Extract ALL technical requirements** - Every component, API, UI element, business rule specified
+- **Preserve implementation details** - Don't generalize specific technical approaches
+- **Catalog all deliverables** - Every feature, integration, test, documentation requirement
 - Review the task breakdown preview
 - Extract epic code from feature name:
 ```bash
@@ -60,12 +63,17 @@ epic_code=$(echo "$ARGUMENTS" | sed 's/-/ /g' | awk '{
 echo "Generated epic code: $epic_code"
 ```
 
-### 2. Analyze for Parallel Creation
+### 2. Analyze for Parallel Creation (Think Harder)
+
+**Use enhanced reasoning to determine optimal task breakdown strategy:**
+
+Think harder: Analyze task dependencies, complexity, and optimal parallel execution patterns.
 
 Determine if tasks can be created in parallel:
 - If tasks are mostly independent: Create in parallel using Task agents
 - If tasks have complex dependencies: Create sequentially
 - For best results: Group independent tasks for parallel creation
+- **Preserve detail granularity** - Each task should contain specific Epic requirements, not generalized summaries
 
 ### 3. Parallel Task Creation (When Possible)
 
@@ -84,9 +92,11 @@ Task:
     For each task:
     1. Create file: .claude/epics/$ARGUMENTS/{epic_code}{number}.md (e.g., ABC001.md)
     2. Use the EXACT frontmatter format specified below
-    3. Follow task breakdown from epic
-    4. Set parallel/depends_on fields appropriately
-    5. Number sequentially (ABC001.md, ABC002.md, etc.)
+    3. **PRESERVE Epic details** - Each task must contain specific technical requirements from Epic, not generalized descriptions
+    4. **Maintain granularity** - Task descriptions should be as detailed as corresponding Epic sections
+    5. Follow task breakdown from epic
+    6. Set parallel/depends_on fields appropriately
+    7. Number sequentially (ABC001.md, ABC002.md, etc.)
 
     REQUIRED FRONTMATTER FORMAT: Use the exact structure defined in section "4. Task File Format with Frontmatter" below. Do not deviate from this format.
 
@@ -235,6 +245,9 @@ Also update the epic's frontmatter progress if needed (still 0% until tasks actu
 ### 12. Quality Validation
 
 Before finalizing tasks, verify:
+- [ ] **Detail preservation check** - Each task contains same level of specificity as corresponding Epic section
+- [ ] **Complete requirement mapping** - Every Epic technical requirement has corresponding task
+- [ ] **No unnecessary simplification** - Specific Epic requirements weren't generalized in tasks
 - [ ] All tasks have clear acceptance criteria
 - [ ] Task sizes are reasonable (1-3 days each)
 - [ ] Dependencies are logical and achievable

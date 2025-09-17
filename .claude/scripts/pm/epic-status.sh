@@ -37,7 +37,7 @@ else
   # Extract metadata
   status=$(grep "^status:" "$epic_file" | head -1 | sed 's/^status: *//')
   progress=$(grep "^progress:" "$epic_file" | head -1 | sed 's/^progress: *//')
-  github=$(grep "^github:" "$epic_file" | head -1 | sed 's/^github: *//')
+  github=$(grep "^github_url:" "$epic_file" | head -1 | sed 's/^github_url: *//')
 
   # Count tasks
   total=0

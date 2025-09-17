@@ -4,13 +4,12 @@ Git branches enable parallel development by allowing multiple developers to work
 
 ## Creating Branches
 
-Always create branches from a clean main branch:
+Always create branches from the current branch:
 ```bash
-# Ensure main is up to date
-git checkout main
-git pull origin main
+# Record current branch
+current_branch=$(git branch --show-current)
 
-# Create branch for epic
+# Create branch for epic from current branch
 git checkout -b epic/{name}
 git push -u origin epic/{name}
 ```
@@ -110,7 +109,7 @@ git log --oneline main..epic/{name}
 ## Best Practices
 
 1. **One branch per epic** - Not per issue
-2. **Clean before create** - Always start from updated main
+2. **Clean before create** - Always start from current branch
 3. **Commit frequently** - Small commits are easier to merge
 4. **Pull before push** - Get latest changes to avoid conflicts
 5. **Use descriptive branches** - `epic/feature-name` not `feature`

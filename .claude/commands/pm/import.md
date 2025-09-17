@@ -65,7 +65,7 @@ name: {issue_title}
 status: {open|closed based on GitHub}
 created: {GitHub createdAt}
 updated: {GitHub updatedAt}
-github: https://github.com/{org}/{repo}/issues/{number}
+github_url: https://github.com/{org}/{repo}/issues/{number}
 imported: true
 ```
 

@@ -19,7 +19,7 @@ Launch parallel agents to work on epic tasks in a shared branch.
    ```
 
 2. **Check GitHub sync:**
-   Look for `github:` field in epic frontmatter.
+   Look for `github_url:` field in epic frontmatter.
    If missing: "❌ Epic not synced. Run: /pm:epic-sync $ARGUMENTS first"
 
 3. **Check for branch:**

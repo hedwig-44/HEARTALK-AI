@@ -4,12 +4,17 @@ allowed-tools: Bash, Read, Write, LS
 
 # Issue Analyze
 
-Analyze an issue to identify parallel work streams for maximum efficiency.
+Analyze an issue to identify parallel work streams for maximum efficiency while preserving task implementation details.
 
 ## Usage
 ```
 /pm:issue-analyze <issue_number>
 ```
+
+## Required Rules
+
+**IMPORTANT:** Before executing this command, read and follow:
+- `.claude/rules/detail-preservation.md` - For maintaining task implementation details in work streams
 
 ## Quick Check
 
@@ -25,20 +30,25 @@ Analyze an issue to identify parallel work streams for maximum efficiency.
 
 ## Instructions
 
-### 1. Read Issue Context
+### 1. Read and Extract Task Details
 
 Get issue details from GitHub:
 ```bash
 gh issue view $ARGUMENTS --json title,body,labels
 ```
 
-Read local task file to understand:
-- Technical requirements
-- Acceptance criteria
-- Dependencies
-- Effort estimate
+Read local task file to understand and **preserve ALL specific requirements**:
+- **Extract complete technical requirements** - Every API, component, function, integration specified
+- **Catalog all acceptance criteria** - Every specific behavior, validation rule, UI requirement
+- **Document all dependencies** - Technical, business, and external dependencies
+- **Preserve implementation details** - Specific approaches, patterns, frameworks mentioned
+- Effort estimate and complexity factors
 
-### 2. Identify Parallel Work Streams
+### 2. Identify Parallel Work Streams (Think Harder)
+
+**Use enhanced reasoning to analyze optimal work stream breakdown:**
+
+Think harder: Analyze the specific technical requirements to identify the most efficient parallel execution strategy while preserving all implementation details.
 
 Analyze the issue to identify independent work that can run in parallel:
 
@@ -51,10 +61,11 @@ Analyze the issue to identify independent work that can run in parallel:
 - **Documentation**: API docs, README updates
 
 **Key Questions:**
-- What files will be created/modified?
-- Which changes can happen independently?
-- What are the dependencies between changes?
-- Where might conflicts occur?
+- What specific files will be created/modified?
+- Which specific changes can happen independently?
+- What are the detailed dependencies between changes?
+- Where might conflicts occur at the file/function level?
+- **Detail preservation**: How to maintain specific requirements in each stream?
 
 ### 3. Create Analysis File
 
@@ -79,7 +90,8 @@ parallelization_factor: {1.0-5.0}
 ## Parallel Streams
 
 ### Stream A: {Stream Name}
-**Scope**: {What this stream handles}
+**Scope**: {What this stream handles - maintain specific technical requirements}
+**Specific Requirements**: {List detailed requirements from task - APIs, components, validations, etc.}
 **Files**:
 - {file_pattern_1}
 - {file_pattern_2}
@@ -89,7 +101,8 @@ parallelization_factor: {1.0-5.0}
 **Dependencies**: none
 
 ### Stream B: {Stream Name}
-**Scope**: {What this stream handles}
+**Scope**: {What this stream handles - maintain specific technical requirements}
+**Specific Requirements**: {List detailed requirements from task - APIs, components, validations, etc.}
 **Files**:
 - {file_pattern_1}
 - {file_pattern_2}
@@ -99,7 +112,8 @@ parallelization_factor: {1.0-5.0}
 **Dependencies**: none
 
 ### Stream C: {Stream Name}
-**Scope**: {What this stream handles}
+**Scope**: {What this stream handles - maintain specific technical requirements}
+**Specific Requirements**: {List detailed requirements from task - APIs, components, validations, etc.}
 **Files**:
 - {file_pattern_1}
 **Agent Type**: {agent_type}
@@ -150,6 +164,9 @@ Without parallel execution:
 ### 4. Validate Analysis
 
 Ensure:
+- **Detail preservation check** - Each stream contains specific task requirements, not generalized descriptions
+- **Complete requirement mapping** - Every task requirement is assigned to a specific stream
+- **No simplification** - Stream descriptions maintain same detail level as original task
 - All major work is covered by streams
 - File patterns don't unnecessarily overlap
 - Dependencies are logical
