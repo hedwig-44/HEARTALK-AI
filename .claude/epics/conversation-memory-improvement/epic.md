@@ -6,7 +6,7 @@ updated: 2025-09-18T05:26:52Z
 progress: 0%
 prd: .claude/prds/conversation-memory-improvement.md
 github_url: https://github.com/hedwig-44/HEARTALK-AI/issues/15
-source_branch: [Will be set when epic starts]
+source_branch: feature/conversation-memory-improvement
 ---
 
 # Epic: conversation-memory-improvement
