@@ -1,0 +1,56 @@
+{
+  "name": "heartalk-ai-backend",
+  "version": "1.0.0",
+  "description": "HEARTALK-AI Backend API with Internal API for AI service integration",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "validate-env": "node scripts/validate-env.js",
+    "health-check": "node scripts/health-check.js"
+  },
+  "keywords": [
+    "heartalk",
+    "ai",
+    "backend",
+    "api",
+    "internal-api",
+    "conversation",
+    "memory"
+  ],
+  "author": "HEARTALK-AI Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.8.1",
+    "winston": "^3.10.0",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.6.2",
+    "supertest": "^6.3.3",
+    "eslint": "^8.45.0",
+    "eslint-config-node": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hedwig-44/HEARTALK-AI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hedwig-44/HEARTALK-AI/issues"
+  },
+  "homepage": "https://github.com/hedwig-44/HEARTALK-AI#readme"
+}
