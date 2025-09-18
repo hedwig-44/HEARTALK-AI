@@ -1,0 +1,44 @@
+# app.js修改说明
+
+## 需要在HEARTALK-BE/backend/src/app.js中添加以下内容：
+
+### 1. 在路由导入部分添加（约第19行后）：
+```javascript
+const internalRoutes = require('./routes/internal');
+```
+
+### 2. 在API路由配置部分添加（约第82行后）：
+```javascript
+// Internal API routes (for AI service)
+app.use('/internal/api/v1', internalRoutes);
+```
+
+## 完整的修改位置参考：
+
+```javascript
+// Import routes
+const healthRoutes = require('./routes/health');
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const conversationRoutes = require('./routes/conversations');
+const projectRoutes = require('./routes/projects');
+const aiRoutes = require('./routes/ai');
+const internalRoutes = require('./routes/internal'); // [新增]
+
+// ... 其他代码 ...
+
+// API routes - v1
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/conversations', conversationRoutes);
+app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/ai', aiRoutes);
+
+// Internal API routes (for AI service) // [新增]
+app.use('/internal/api/v1', internalRoutes); // [新增]
+```
+
+## 注意事项：
+- Internal API需要在常规API路由之后添加
+- 确保HEARTALK_API_KEY环境变量已配置
+- Internal API使用独立的认证机制（API Key验证）
