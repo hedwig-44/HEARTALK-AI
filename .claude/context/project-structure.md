@@ -1,7 +1,7 @@
 ---
 created: 2025-09-13T04:21:42Z
-last_updated: 2025-09-13T12:35:44Z
-version: 1.1
+last_updated: 2025-09-13T13:39:30Z
+version: 1.2
 author: Claude Code PM System
 ---
 
@@ -37,6 +37,47 @@ src/
 test-chat.js                # 开发模式AI聊天测试脚本
 test-chat-production.js     # 生产模式AI聊天测试脚本
 test-custom-cache.js        # 自定义缓存性能测试脚本
+```
+
+### 项目管理和文档 (.claude/)
+```
+.claude/
+├── CLAUDE.md               # 项目开发规则和指南
+├── commands/               # Claude Code 命令定义
+│   └── pm/                 # 项目管理命令
+│       ├── epic-sync.md    # Epic GitHub 同步命令
+│       ├── epic-decompose.md # Epic 任务分解命令
+│       └── status.md       # 项目状态检查命令
+├── context/                # 项目上下文文档系统
+│   ├── README.md           # 上下文系统说明
+│   ├── progress.md         # 项目进度跟踪
+│   ├── project-structure.md # 项目架构文档 (本文件)
+│   ├── tech-context.md     # 技术栈和实现细节
+│   ├── system-patterns.md  # 系统设计模式
+│   ├── product-context.md  # 产品功能和业务上下文
+│   ├── project-brief.md    # 项目简介和交付摘要
+│   ├── project-overview.md # 项目全面概览
+│   ├── project-vision.md   # 项目愿景和发展规划
+│   └── project-style-guide.md # 代码风格和开发规范
+├── epics/                  # Epic 和任务管理
+│   └── ai-service-completed/ # 已完成的 AI 服务 Epic
+│       ├── epic.md         # Epic 主文件 (已同步到 GitHub #8)
+│       ├── 001.md          # 架构设计任务 (GitHub #9)
+│       ├── 002.md          # 认证中间件任务 (GitHub #10)
+│       ├── 003.md          # CoT推理引擎任务 (GitHub #11)
+│       ├── 004.md          # Self-Consistency任务 (GitHub #12)
+│       ├── 005.md          # 智能路由缓存任务 (GitHub #13)
+│       └── 006.md          # 生产部署任务 (GitHub #14)
+├── prds/                   # 产品需求文档
+│   ├── ai-service-completed.md # AI服务完成版PRD
+│   └── heartalk-ai-replacement.md # HearTalk替换方案PRD
+├── rules/                  # 开发规则和约定
+│   └── datetime.md         # 日期时间处理规则
+└── scripts/                # 项目管理脚本
+    └── pm/                 # PM工具脚本
+        ├── status.sh       # 项目状态检查
+        ├── epic-list.sh    # Epic列表查看
+        └── standup.sh      # 日常站会工具
 ```
 
 ### 配置文件

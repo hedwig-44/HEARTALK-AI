@@ -4,7 +4,8 @@ status: completed
 created: 2025-09-13T04:56:53Z
 progress: 100%
 prd: .claude/prds/ai-service-completed.md
-github: [Will be updated when synced to GitHub]
+github: https://github.com/hedwig-44/ai_service/issues/8
+last_sync: 2025-09-13T05:30:00Z
 ---
 
 # Epic: HearTalk AI MVP 已完成项目
