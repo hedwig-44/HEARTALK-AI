@@ -2,10 +2,10 @@
 name: conversation-memory-improvement
 status: backlog
 created: 2025-09-18T04:36:34Z
-updated: [Will be set when epic is modified]
+updated: 2025-09-18T05:26:52Z
 progress: 0%
 prd: .claude/prds/conversation-memory-improvement.md
-github_url: [Will be updated when synced to GitHub]
+github_url: https://github.com/hedwig-44/HEARTALK-AI/issues/15
 source_branch: [Will be set when epic starts]
 ---
 
@@ -102,11 +102,11 @@ source_branch: [Will be set when epic starts]
 - **部署时间**: 30分钟热重启，无停机时间
 
 ## Tasks Created
-- [ ] CMI001.md - 实现Backend Internal API路由和端点 (parallel: true)
-- [ ] CMI002.md - 实现Internal API认证中间件 (parallel: false)
-- [ ] CMI003.md - 修改AI服务Backend API客户端集成 (parallel: false)
-- [ ] CMI004.md - 执行系统集成测试和AI记忆功能验证 (parallel: false)
-- [ ] CMI005.md - 配置部署环境和服务重启 (parallel: true)
+- [ ] CMI001 → #16 - 实现Backend Internal API路由和端点 (parallel: true)
+- [ ] CMI002 → #17 - 实现Internal API认证中间件 (parallel: false)
+- [ ] CMI003 → #18 - 修改AI服务Backend API客户端集成 (parallel: false)
+- [ ] CMI004 → #19 - 执行系统集成测试和AI记忆功能验证 (parallel: false)
+- [ ] CMI005 → #20 - 配置部署环境和服务重启 (parallel: true)
 
 Total tasks: 5
 Parallel tasks: 2 (CMI001, CMI005)
