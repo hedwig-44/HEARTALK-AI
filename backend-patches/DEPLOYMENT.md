@@ -20,17 +20,17 @@ ai-service/src/services/BackendApiClient.js  # 更新API响应处理
 
 ## 部署步骤
 
-### Phase 1: 同步到HEARTALK-BE项目
+### Phase 1: 在HEARTALK-AI项目中部署
 
-1. **复制Internal API路由**
+1. **Internal API路由已创建**
    ```bash
-   cp backend-patches/src/routes/internal.js \
-      /Users/lulu/Documents/Work/ai_chat_v2/HEARTALK-BE/backend/src/routes/internal.js
+   # 文件位置：backend/src/routes/internal.js
+   # 已包含在项目中
    ```
 
-2. **修改app.js文件**
+2. **创建或修改backend/src/app.js文件**
    
-   在 `/Users/lulu/Documents/Work/ai_chat_v2/HEARTALK-BE/backend/src/app.js` 中添加：
+   在 `HEARTALK-AI/backend/src/app.js` 中添加：
    
    ```javascript
    // 在路由导入部分添加（约第20行）
@@ -40,10 +40,10 @@ ai-service/src/services/BackendApiClient.js  # 更新API响应处理
    app.use('/internal/api/v1', internalRoutes);
    ```
 
-3. **同步AI服务修改**
+3. **AI服务已包含修改**
    ```bash
-   cp ai-service/src/services/BackendApiClient.js \
-      /Users/lulu/Documents/Work/ai_chat_v2/HEARTALK-BE/ai-service/src/services/BackendApiClient.js
+   # BackendApiClient.js 已更新
+   # 位置：ai-service/src/services/BackendApiClient.js
    ```
 
 ### Phase 2: 环境配置
