@@ -1,0 +1,32 @@
+# HearTalk AI MVP Development Dockerfile
+FROM node:18-alpine
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV PORT=8001
+ENV HOST=0.0.0.0
+
+# Create app user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S heartalk -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci
+
+# Create logs directory
+RUN mkdir -p logs && chown heartalk:nodejs logs
+
+# Expose port
+EXPOSE 8001
+
+# Switch to non-root user
+USER heartalk
+
+# Start the application with nodemon for hot reload
+CMD ["npm", "run", "dev"]
