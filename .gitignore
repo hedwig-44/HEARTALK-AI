@@ -1,3 +1,4 @@
 .DS_Store
 CLAUDE.md
-LOG.md
+tmp/
+.claude/settings.local.json

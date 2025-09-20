@@ -8,7 +8,7 @@ Push local updates as GitHub issue comments for transparent audit trail.
 
 ## Usage
 ```
-/pm:issue-sync <issue_number>
+/pm:issue-sync <task_id>
 ```
 
 ## Required Rules
@@ -20,6 +20,16 @@ Push local updates as GitHub issue comments for transparent audit trail.
 
 Before proceeding, complete these validation steps.
 Do not bother the user with preflight checks progress ("I'm not going to ..."). Just do them and move on.
+
+```bash
+# Find task file
+task_file=$(find .claude/epics -name "$ARGUMENTS.md" -not -path "*/.archived/*" 2>/dev/null | head -1)
+[ -z "$task_file" ] && echo "❌ No task file found for $ARGUMENTS" && exit 1
+
+# Extract GitHub issue number from task file
+issue_number=$(grep "^github_url:" "$task_file" 2>/dev/null | grep -o '[0-9]*$')
+[ -z "$issue_number" ] && echo "❌ No GitHub issue found for $ARGUMENTS. Run /pm:epic-sync first." && exit 1
+```
 
 0. **Repository Protection Check:**
    Follow `/rules/github-operations.md` - check remote origin:
@@ -37,12 +47,12 @@ Do not bother the user with preflight checks progress ("I'm not going to ..."). 
    - If not authenticated, tell user: "❌ GitHub CLI not authenticated. Run: gh auth login"
 
 2. **Issue Validation:**
-   - Run: `gh issue view $ARGUMENTS --json state`
-   - If issue doesn't exist, tell user: "❌ Issue #$ARGUMENTS not found"
+   - Run: `gh issue view $issue_number --json state`
+   - If issue doesn't exist, tell user: "❌ Issue #$issue_number not found"
    - If issue is closed and completion < 100%, warn: "⚠️ Issue is closed but work incomplete"
 
 3. **Local Updates Check:**
-   - Check if `.claude/epics/*/updates/$ARGUMENTS/` directory exists
+   - Check if updates directory exists using task file path
    - If not found, tell user: "❌ No local updates found for issue #$ARGUMENTS. Run: /pm:issue-start $ARGUMENTS"
    - Check if progress.md exists
    - If not, tell user: "❌ No progress tracking found. Initialize with: /pm:issue-start $ARGUMENTS"
@@ -126,7 +136,7 @@ Create comprehensive update comment:
 ### 5. Post to GitHub
 Use GitHub CLI to add comment:
 ```bash
-gh issue comment #$ARGUMENTS --body-file {temp_comment_file}
+gh issue comment #$issue_number --body-file {temp_comment_file}
 ```
 
 ### 6. Update Local Task File
@@ -182,7 +192,7 @@ fi
    Epic progress: {epic_progress}%
    Completed criteria: {completed}/{total}
 
-🔗 View update: gh issue view #$ARGUMENTS --comments
+🔗 View update: gh issue view #$issue_number --comments
 ```
 
 ### 9. Frontmatter Maintenance

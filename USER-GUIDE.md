@@ -29,14 +29,14 @@
 - **`/pm:epic-status <name>`** →→ `epic-status.sh`：汇总任务完成度，绘制进度条并显示 open/blocked/closed 数。
 
 ### Issue/任务 (/pm)
-- **`/pm:issue-show <issue_number>`** → `issue-show.md`：显示 GitHub issue 详情、关联任务与最近活动，便于快速了解上下文
-- **`/pm:issue-status <issue_number>`** → `issue-status.md`：查询 issue 当前状态、标签与本地同步情况，给出后续操作建议
-- **`/pm:issue-start <issue_number>`** → `issue-start.md`：依据分析文件划分并行工作流，在 epic 工作树中启动对应代理
-- **`/pm:issue-sync <issue_number>`** → `issue-sync.md`：把本地 `updates/` 中的进展整合为 GitHub 评论，同时更新任务与 epic 的前置信息
-- **`/pm:issue-close <issue_number>`** → `issue-close.md`：将任务标记为完成并关闭 GitHub issue，勾选 epic 中的任务复选框
-- **`/pm:issue-reopen <issue_number>`** → `issue-reopen.md`：重新打开已关闭任务，恢复本地与 GitHub 状态并重新计算 epic 进度
-- **`/pm:issue-edit <issue_number>`** → `issue-edit.md`：更新任务标题、描述或标签，先改本地文件再同步至 GitHub
-- **`/pm:issue-analyze <issue_number>`** → `issue-analyze.md`：分析任务可并行的工作流，生成 `*-analysis.md` 并评估并行效率
+- **`/pm:issue-show <task_id>`** → `issue-show.md`：显示 GitHub issue 详情、关联任务与最近活动，便于快速了解上下文
+- **`/pm:issue-status <task_id>`** → `issue-status.md`：查询 issue 当前状态、标签与本地同步情况，给出后续操作建议
+- **`/pm:issue-start <task_id>`** → `issue-start.md`：依据分析文件划分并行工作流，在 epic 工作树中启动对应代理
+- **`/pm:issue-sync <task_id>`** → `issue-sync.md`：把本地 `updates/` 中的进展整合为 GitHub 评论，同时更新任务与 epic 的前置信息
+- **`/pm:issue-close <task_id>`** → `issue-close.md`：将任务标记为完成并关闭 GitHub issue，勾选 epic 中的任务复选框
+- **`/pm:issue-reopen <task_id>`** → `issue-reopen.md`：重新打开已关闭任务，恢复本地与 GitHub 状态并重新计算 epic 进度
+- **`/pm:issue-edit <task_id>`** → `issue-edit.md`：更新任务标题、描述或标签，先改本地文件再同步至 GitHub
+- **`/pm:issue-analyze <task_id>`** → `issue-analyze.md`：分析任务可并行的工作流，生成 `*-analysis.md` 并评估并行效率
 
 ### 工作流管理 (/pm)
 - **`/pm:next`** →→ `next.sh`：扫描所有 epic，列出无未完成依赖的可开工任务。
@@ -51,7 +51,6 @@
 - **`/pm:clean [--dry-run]`** → `clean.md`：清理已完成或陈旧的进度文件，归档过期 epic 并输出清理计划
 - **`/pm:validate`** →→ `validate.sh`：检查 `.claude` 目录结构、任务引用、frontmatter 等完整性。
 - **`/pm:search <query>`** →→ `search.sh`：在 PRD、epic、任务中全文检索关键词并统计结果。
-- **`/pm:workdir-type`** →→ `workdir-type.sh`（新增）判断当前路径是主仓库还是 Git worktree。
 
 ### 上下文管理 (/context)
 - **`/context:create`** → `create.md`：分析项目结构并生成 `.claude/context/` 下的多份基线文档，作为项目上下文

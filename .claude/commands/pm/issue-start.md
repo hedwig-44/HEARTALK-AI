@@ -8,26 +8,33 @@ Begin work on a GitHub issue with parallel agents based on work stream analysis.
 
 ## Usage
 ```
-/pm:issue-start <issue_number>
+/pm:issue-start <task_id>
 ```
 
 ## Quick Check
 
 1. **Get issue details:**
    ```bash
-   gh issue view $ARGUMENTS --json state,title,labels,body
+   # Find task file
+   task_file=$(find .claude/epics -name "$ARGUMENTS.md" -not -path "*/.archived/*" 2>/dev/null | head -1)
+   [ -z "$task_file" ] && echo "❌ No task file found for $ARGUMENTS" && exit 1
+
+   # Extract GitHub issue number from task file
+   issue_number=$(grep "^github_url:" "$task_file" 2>/dev/null | grep -o '[0-9]*$')
+   [ -z "$issue_number" ] && echo "❌ No GitHub issue found for $ARGUMENTS. Run /pm:epic-sync first." && exit 1
+   gh issue view $issue_number --json state,title,labels,body
    ```
-   If it fails: "❌ Cannot access issue #$ARGUMENTS. Check number or run: gh auth login"
+   If it fails: "❌ Cannot access issue #$issue_number. Check number or run: gh auth login"
 
 2. **Find local task file:**
-   - First check if `.claude/epics/*/$ARGUMENTS.md` exists (new naming)
-   - If not found, search for file containing `github:.*issues/$ARGUMENTS` in frontmatter (old naming)
-   - If not found: "❌ No local task for issue #$ARGUMENTS. This issue may have been created outside the PM system."
+   - Check if task file exists (already done in step 1)
+   - If not found: "❌ No local task for issue $ARGUMENTS. This task may have been created outside the PM system."
 
 3. **Check for analysis:**
    ```bash
-   test -f .claude/epics/*/$ARGUMENTS-analysis.md || echo "❌ No analysis found for issue #$ARGUMENTS
-   
+   epic_dir=$(dirname "$task_file")
+   test -f "$epic_dir/$ARGUMENTS-analysis.md" || echo "❌ No analysis found for issue #$ARGUMENTS
+
    Run: /pm:issue-analyze $ARGUMENTS first
    Or: /pm:issue-start $ARGUMENTS --analyze to do both"
    ```
@@ -39,8 +46,8 @@ Begin work on a GitHub issue with parallel agents based on work stream analysis.
 
 Check if epic worktree exists:
 ```bash
-# Find epic name from task file
-epic_name={extracted_from_path}
+# Extract epic name from task file path
+epic_name=$(basename $(dirname "$task_file"))
 
 # Check worktree
 if ! git worktree list | grep -q "epic-$epic_name"; then
@@ -127,7 +134,7 @@ Task:
 
 ```bash
 # Assign to self and mark in-progress
-gh issue edit $ARGUMENTS --add-assignee @me --add-label "in-progress"
+gh issue edit $issue_number --add-assignee @me --add-label "in-progress"
 ```
 
 ### 6. Output

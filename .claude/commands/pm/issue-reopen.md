@@ -8,15 +8,22 @@ Reopen a closed issue.
 
 ## Usage
 ```
-/pm:issue-reopen <issue_number> [reason]
+/pm:issue-reopen <task_id> [reason]
 ```
 
 ## Instructions
 
-### 1. Find Local Task File
+### 1. Find Local Task File and Extract GitHub Issue Number
 
-Search for task file with `github:.*issues/$ARGUMENTS` in frontmatter.
-If not found: "❌ No local task for issue #$ARGUMENTS"
+```bash
+# Find task file
+task_file=$(find .claude/epics -name "$ARGUMENTS.md" -not -path "*/.archived/*" 2>/dev/null | head -1)
+[ -z "$task_file" ] && echo "❌ No task file found for $ARGUMENTS" && exit 1
+
+# Extract GitHub issue number from task file
+issue_number=$(grep "^github_url:" "$task_file" 2>/dev/null | grep -o '[0-9]*$')
+[ -z "$issue_number" ] && echo "❌ No GitHub issue found for $ARGUMENTS. Run /pm:epic-sync first." && exit 1
+```
 
 ### 2. Update Local Status
 
@@ -44,10 +51,10 @@ echo "🔄 Reopening issue
 Reason: $ARGUMENTS
 
 ---
-Reopened at: {timestamp}" | gh issue comment $ARGUMENTS --body-file -
+Reopened at: {timestamp}" | gh issue comment $issue_number --body-file -
 
 # Reopen the issue
-gh issue reopen $ARGUMENTS
+gh issue reopen $issue_number
 ```
 
 ### 5. Update Epic Progress

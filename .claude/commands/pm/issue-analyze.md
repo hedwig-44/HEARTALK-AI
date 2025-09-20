@@ -8,7 +8,7 @@ Analyze an issue to identify parallel work streams for maximum efficiency while 
 
 ## Usage
 ```
-/pm:issue-analyze <issue_number>
+/pm:issue-analyze <task_id>
 ```
 
 ## Required Rules
@@ -19,13 +19,16 @@ Analyze an issue to identify parallel work streams for maximum efficiency while 
 ## Quick Check
 
 1. **Find local task file:**
-   - First check if `.claude/epics/*/$ARGUMENTS.md` exists (new naming convention)
-   - If not found, search for file containing `github:.*issues/$ARGUMENTS` in frontmatter (old naming)
-   - If not found: "❌ No local task for issue #$ARGUMENTS. Run: /pm:import first"
+   ```bash
+   # Find task file
+   task_file=$(find .claude/epics -name "$ARGUMENTS.md" -not -path "*/.archived/*" 2>/dev/null | head -1)
+   [ -z "$task_file" ] && echo "❌ No task file found for $ARGUMENTS. Run: /pm:import first" && exit 1
+   ```
 
 2. **Check for existing analysis:**
    ```bash
-   test -f .claude/epics/*/$ARGUMENTS-analysis.md && echo "⚠️ Analysis already exists. Overwrite? (yes/no)"
+   epic_dir=$(dirname "$task_file")
+   test -f "$epic_dir/$ARGUMENTS-analysis.md" && echo "⚠️ Analysis already exists. Overwrite? (yes/no)"
    ```
 
 ## Instructions
@@ -34,7 +37,10 @@ Analyze an issue to identify parallel work streams for maximum efficiency while 
 
 Get issue details from GitHub:
 ```bash
-gh issue view $ARGUMENTS --json title,body,labels
+# Extract GitHub issue number from task file
+issue_number=$(grep "^github_url:" "$task_file" 2>/dev/null | grep -o '[0-9]*$')
+[ -z "$issue_number" ] && echo "❌ No GitHub issue found for $ARGUMENTS. Run /pm:epic-sync first." && exit 1
+gh issue view $issue_number --json title,body,labels
 ```
 
 Read local task file to understand and **preserve ALL specific requirements**:
