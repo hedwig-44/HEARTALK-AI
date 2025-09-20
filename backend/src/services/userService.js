@@ -5,45 +5,21 @@
  */
 
 const { logger } = require('../utils/logger');
+const database = require('../config/database');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 /**
- * 模拟用户数据存储
- * 在真实环境中，这应该是数据库表
+ * 用户服务错误类
  */
-const mockUsers = new Map([
-  [1, {
-    id: 1,
-    username: 'test_user',
-    name: '测试用户',
-    email: 'test@heartalk.ai',
-    preferences: {
-      language: 'zh-CN',
-      theme: 'light',
-      notifications: true,
-      aiPersonality: 'friendly'
-    },
-    created_at: '2025-09-01T00:00:00Z',
-    updated_at: '2025-09-18T08:00:00Z',
-    last_login: '2025-09-18T08:00:00Z',
-    status: 'active'
-  }],
-  [2, {
-    id: 2,
-    username: 'demo_user',
-    name: '演示用户',
-    email: 'demo@heartalk.ai',
-    preferences: {
-      language: 'en-US',
-      theme: 'dark',
-      notifications: false,
-      aiPersonality: 'professional'
-    },
-    created_at: '2025-09-10T00:00:00Z',
-    updated_at: '2025-09-17T15:30:00Z',
-    last_login: '2025-09-17T15:30:00Z',
-    status: 'active'
-  }]
-]);
+class UserServiceError extends Error {
+  constructor(message, statusCode = 500) {
+    super(message);
+    this.name = 'UserServiceError';
+    this.statusCode = statusCode;
+  }
+}
+
 
 class UserService {
   constructor() {
@@ -501,7 +477,7 @@ class UserService {
    */
   sanitizeUser(user) {
     // 移除敏感信息，只返回公开字段
-    const { ...sanitized } = user;
+    const { password, ...sanitized } = user;
     
     // 可以根据需要添加更多的字段过滤逻辑
     return sanitized;
@@ -547,4 +523,122 @@ class UserService {
   }
 }
 
-module.exports = new UserService();
+// 创建服务实例
+const userServiceInstance = new UserService();
+
+// 导出服务方法和错误类
+module.exports = {
+  // 创建用户 (映射到 create 方法)
+  createUser: userServiceInstance.create.bind(userServiceInstance),
+  // 用户认证
+  authenticateUser: async (email, password) => {
+    try {
+      const startTime = Date.now();
+      
+      userServiceInstance.logger.debug('Authenticating user', {
+        email
+      });
+
+      // 验证必要字段
+      if (!email || !password) {
+        throw new UserServiceError('Email and password are required', 400);
+      }
+
+      // 查询数据库中的用户
+      const result = await database.query(
+        'SELECT id, email, password, name, preferences FROM users WHERE email = $1',
+        [email.toLowerCase()]
+      );
+
+      if (result.rows.length === 0) {
+        const duration = Date.now() - startTime;
+        userServiceInstance.logger.logDatabaseOperation(
+          'SELECT',
+          'users',
+          duration,
+          false,
+          { email, reason: 'user_not_found' }
+        );
+        throw new UserServiceError('Invalid email or password', 401);
+      }
+
+      const user = result.rows[0];
+
+      // 验证密码（使用bcrypt）
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      
+      if (!isPasswordValid) {
+        const duration = Date.now() - startTime;
+        userServiceInstance.logger.logDatabaseOperation(
+          'SELECT',
+          'users',
+          duration,
+          false,
+          { email, reason: 'invalid_password' }
+        );
+        throw new UserServiceError('Invalid email or password', 401);
+      }
+
+      // 更新最后登录时间
+      await database.query(
+        'UPDATE users SET updated_at = NOW() WHERE id = $1',
+        [user.id]
+      );
+
+      // 生成JWT token
+      const tokenPayload = {
+        userId: user.id,
+        email: user.email
+      };
+
+      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+        expiresIn: '24h',
+        issuer: 'heartalk-backend',
+        audience: 'heartalk-frontend'
+      });
+
+      const duration = Date.now() - startTime;
+      userServiceInstance.logger.logDatabaseOperation(
+        'SELECT',
+        'users',
+        duration,
+        true,
+        { email, userId: user.id, authenticated: true }
+      );
+
+      // 返回用户信息和token（不包含密码）
+      const { password: _, ...sanitizedUser } = user;
+      
+      return {
+        token,
+        user: sanitizedUser
+      };
+
+    } catch (error) {
+      if (error instanceof UserServiceError) {
+        throw error;
+      }
+      
+      userServiceInstance.logger.error('Failed to authenticate user', {
+        email,
+        error: error.message,
+        stack: error.stack
+      });
+      throw new UserServiceError('Authentication service unavailable', 500);
+    }
+  },
+  // 根据ID获取用户 (映射到 getById 方法)
+  getUserById: userServiceInstance.getById.bind(userServiceInstance),
+  // 更新用户资料 (映射到 update 方法)
+  updateUserProfile: userServiceInstance.update.bind(userServiceInstance),
+  // 更新密码 (需要实现)
+  updateUserPassword: async (userId, currentPassword, newPassword) => {
+    throw new UserServiceError('Password update not implemented in mock service', 501);
+  },
+  // 检查邮箱可用性 (映射到 getByEmail 的反向逻辑)
+  isEmailAvailable: async (email) => {
+    const existingUser = await userServiceInstance.getByEmail(email);
+    return !existingUser;
+  },
+  UserServiceError
+};

@@ -3,6 +3,9 @@
  * 主应用入口，集成Internal API和核心服务
  */
 
+// 加载环境变量配置
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -14,6 +17,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // 导入路由
 const internalRoutes = require('./routes/internal');
+const authRoutes = require('./routes/auth');
 
 // 验证环境配置
 function validateEnvironment() {
@@ -121,6 +125,9 @@ app.get('/health', (req, res) => {
 
 // Internal API路由 (关键集成点)
 app.use('/internal/api/v1', internalRoutes);
+
+// 认证API路由
+app.use('/api/v1/auth', authRoutes);
 
 // API路由占位符 (根据需要添加其他路由)
 app.get('/api/v1/status', (req, res) => {

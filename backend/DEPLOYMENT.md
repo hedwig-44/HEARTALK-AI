@@ -1,7 +1,7 @@
-# 方案二部署说明
+# HearTalk AI Backend Service 部署指南
 
 ## 概览
-本次部署实现了HearTalk AI记忆功能改进方案二，通过添加Internal API解决AI对话上下文缺失问题。
+HearTalk AI Backend Service 是智能对话平台的核心后端服务，提供用户管理、对话存储和Internal API支持。本服务与AI Service协同工作，实现智能记忆和连贯对话体验。
 
 ## 文件清单
 

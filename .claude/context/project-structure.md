@@ -1,17 +1,24 @@
 ---
 created: 2025-09-13T04:21:42Z
-last_updated: 2025-09-13T13:39:30Z
-version: 1.2
+last_updated: 2025-09-19T10:26:34Z
+version: 1.3
 author: Claude Code PM System
 ---
 
 # 项目结构
 
+## 平台架构概览
+
+HearTalk AI平台现采用**微服务架构**，包含两个核心服务：
+
+- **AI Service** (Port: 8001) - AI推理和对话处理服务
+- **Backend Service** (Port: 8000) - 用户管理和数据存储服务
+
 ## 目录结构
 
-### 核心应用代码 (src/)
+### AI Service 核心代码 (src/)
 ```
-src/
+src/                         # AI服务核心代码
 ├── index.js                 # 应用入口点，Express服务器启动
 ├── app.js                   # Express应用配置和中间件设置
 ├── controllers/             # API控制器层
@@ -27,9 +34,37 @@ src/
 ├── utils/                   # 工具类和配置
 │   ├── ConfigManager.js     # 配置管理器，环境变量处理
 │   ├── Logger.js            # Winston日志工具
-│   └── ContextManager.js    # 对话上下文管理
+│   └── ContextManager.js    # 对话上下文管理，集成Backend API
 └── routes/                  # 路由定义
     └── ChatRoutes.js        # 聊天相关路由定义
+```
+
+### Backend Service 架构 (backend/)
+```
+backend/                     # Backend服务 (新增)
+├── .env                     # 环境配置文件
+├── .env.example            # 环境配置模板
+├── package.json            # Node.js项目配置 (新增依赖)
+├── DEPLOYMENT.md           # 部署指南
+├── scripts/                # 部署和维护脚本
+│   ├── health-check.js     # 健康检查脚本
+│   ├── validate-env.js     # 环境变量验证
+│   ├── verify-deployment.js # 部署验证脚本
+│   └── verify-deployment.sh # Shell部署验证
+└── src/                    # Backend源代码
+    ├── app.js              # Backend应用主入口
+    ├── config/             # 配置管理目录 (新增)
+    ├── middleware/         # 中间件层
+    │   └── errorHandler.js # 错误处理中间件
+    ├── routes/             # API路由层
+    │   ├── internal.js     # Internal API路由 (AI Service专用)
+    │   └── conversations.js # 对话管理路由
+    ├── services/           # 业务逻辑层
+    │   ├── conversationService.js # 对话管理服务
+    │   ├── messageService.js      # 消息管理服务
+    │   └── userService.js         # 用户管理服务
+    └── utils/              # 工具类
+        └── logger.js       # Winston日志工具
 ```
 
 ### 测试文件

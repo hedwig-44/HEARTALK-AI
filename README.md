@@ -3,37 +3,41 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-16+-green.svg)](https://nodejs.org/)
 [![GitHub Issues](https://img.shields.io/github/issues/hedwig-44/HEARTALK-AI.svg)](https://github.com/hedwig-44/HEARTALK-AI/issues)
+[![Development Status](https://img.shields.io/badge/Status-Beta-orange.svg)](https://github.com/hedwig-44/HEARTALK-AI)
 
-> 一个现代化的AI对话平台，支持智能记忆、多轮对话和个性化体验
+> 🚧 **开发中** - 现代化的AI对话平台后端API服务，支持智能记忆、多轮对话和个性化体验
 
 ## 📖 项目简介
 
-HearTalk AI是一个综合性的AI对话平台，旨在提供自然、智能、有记忆的对话体验。通过先进的AI技术和完善的后端架构，为用户打造个性化的AI助手服务。
+HearTalk AI是一个正在开发中的AI对话平台后端服务。当前版本提供完整的AI推理服务和基础后端API，支持智能记忆和多轮对话。
+
+**当前实现状态**：
+- ✅ **AI推理服务** - 完整的智能对话和推理增强功能
+- ✅ **Backend API** - 基础的内部API和数据管理
+- ✅ **智能路由** - 基于关键词的智能AI端点选择
+- 🚧 **用户认证** - 基础框架已搭建，完整实现进行中
 
 ### 🎯 核心特性
 
 - **🧠 智能记忆系统**: AI能够记住对话历史，提供连贯的多轮对话体验
-- **👤 个性化体验**: 基于用户偏好和历史对话定制响应风格
-- **🔐 安全认证**: JWT + API Key双重认证机制保障数据安全
-- **⚡ 高性能**: API响应时间优化到200ms以内，支持并发访问
-- **🔧 模块化架构**: 前端、后端、AI服务分离，便于扩展和维护
-- **📊 智能分析**: 对话质量分析和用户行为洞察
+- **🤖 双端点AI路由**: 支持通用对话和工作助理两种智能端点自动选择
+- **⚡ 推理增强**: Chain-of-Thought和Self-Consistency推理算法
+- **🔧 微服务架构**: Backend和AI服务分离，专业化API设计
+- **📊 智能路由**: 基于86个关键词的LRU缓存路由系统
+- **🔒 内部API安全**: JWT + API Key双重认证的服务间通信
 
 ## 🏗️ 系统架构
 
-### 微服务架构图 (v1.0)
+### 微服务架构图 (v0.1-beta)
 
 ```mermaid
 graph TB
-    %% 用户层
-    Client[👤 客户端<br/>Web/Mobile]
-    
-    %% API网关层
-    Gateway[🚪 API Gateway<br/>路由 & 认证]
+    %% API用户层  
+    API_Clients[🔌 API客户端<br/>第三方应用/服务]
     
     %% 核心服务层
     Backend[🗄️ Backend Service<br/>用户管理 & 对话存储<br/>Port: 8000]
-    AIService[🤖 AI Service<br/>智能对话处理<br/>Port: 3000]
+    AIService[🤖 AI Service<br/>智能对话处理<br/>Port: 8001]
     
     %% 数据层
     Database[(🗃️ PostgreSQL<br/>用户数据 & 对话历史)]
@@ -43,9 +47,8 @@ graph TB
     AIModel[🧠 AI Model<br/>OpenAI/Claude API]
     
     %% 连接关系
-    Client --> Gateway
-    Gateway --> Backend
-    Gateway --> AIService
+    API_Clients --> Backend
+    API_Clients --> AIService
     
     Backend --> Database
     Backend --> Cache
@@ -59,8 +62,8 @@ graph TB
     classDef dataStyle fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
     classDef aiStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
     
-    class Client clientStyle
-    class Gateway,Backend,AIService serviceStyle
+    class API_Clients clientStyle
+    class Backend,AIService serviceStyle
     class Database,Cache dataStyle
     class AIModel aiStyle
 ```
@@ -68,10 +71,7 @@ graph TB
 ### 目录结构
 
 ```
-HearTalk AI Platform
-├── frontend/              # 前端应用
-│   ├── web/              # Web界面 (React/Vue)
-│   └── mobile/           # 移动端应用
+HearTalk AI Platform (后端API服务)
 ├── backend/              # 后端服务
 │   ├── src/
 │   │   ├── routes/       # API路由
@@ -94,8 +94,8 @@ HearTalk AI Platform
 
 ```mermaid
 sequenceDiagram
-    participant C as 👤 客户端
-    participant G as 🚪 API Gateway
+    participant C as 🔌 API客户端应用
+    participant G as 🚪 负载均衡器
     participant B as 🗄️ Backend Service
     participant A as 🤖 AI Service
     participant D as 🗃️ Database
@@ -104,7 +104,7 @@ sequenceDiagram
     
     Note over C,R: 🚀 智能对话处理流程
     
-    %% 1. 用户发送消息
+    %% 1. API客户端发送请求
     C->>+G: POST /api/chat
     G->>+B: 验证用户身份
     B->>D: 查询用户信息
@@ -313,12 +313,14 @@ graph TD
 
 4. **启动服务**
    ```bash
-   # 使用Docker Compose启动所有服务
-   docker-compose up -d
-   
-   # 或者分别启动各个服务
+   # 启动后端服务
    cd backend && npm start
+   
+   # 启动AI服务 (新终端窗口)
    cd ai-service && npm start
+   
+   # 或使用AI服务的Docker部署
+   cd ai-service && docker-compose up -d
    ```
 
 5. **验证部署**
@@ -327,19 +329,18 @@ graph TD
    curl http://localhost:8000/health
    
    # 检查AI服务状态
-   curl http://localhost:3000/health
+   curl http://localhost:8001/health
    ```
 
 ## 🔧 API文档
 
 ### Backend API
 
-#### 用户相关
-- `POST /api/auth/login` - 用户登录
-- `POST /api/auth/register` - 用户注册
-- `GET /api/users/profile` - 获取用户信息
+#### 核心功能
+- `GET /health` - 系统健康检查
+- `GET /api/v1/status` - 服务状态查询
 
-#### 对话相关
+#### 对话相关 (开发中)
 - `POST /api/conversations` - 创建新对话
 - `GET /api/conversations/:id` - 获取对话详情
 - `POST /api/conversations/:id/messages` - 发送消息
@@ -430,23 +431,31 @@ chore: 构建或工具更改
 
 ## 📈 路线图
 
-### v1.0 (当前版本)
-- [x] 基础对话功能
-- [x] 用户管理系统
-- [x] AI记忆系统
+### v0.1-beta (当前版本)
+- [x] AI推理服务完整实现
+- [x] 智能路由系统 (BasicRouter)
+- [x] 推理增强 (Chain-of-Thought + Self-Consistency)
 - [x] Internal API集成
+- [x] 微服务架构基础
 
-### v1.1 (计划中)
+### v0.2 (下一版本)
+- [ ] 完整用户认证系统
+- [ ] 对话管理API完善
+- [ ] 数据库集成优化
+- [ ] 完整的错误处理机制
+
+### v1.0 (正式版本)
+- [ ] 生产级部署配置
+- [ ] 完整的监控和日志系统
+- [ ] 性能优化和负载测试
+- [ ] API文档完善
+- [ ] 安全审计和加固
+
+### v1.1+ (未来版本)
 - [ ] 多语言支持
-- [ ] 语音对话功能
 - [ ] 高级个性化设置
 - [ ] 对话导出功能
-
-### v2.0 (未来版本)
-- [ ] 多模态AI支持
-- [ ] 实时协作功能
-- [ ] 插件系统
-- [ ] 移动端应用
+- [ ] 插件系统扩展
 
 ## 🤝 贡献指南
 

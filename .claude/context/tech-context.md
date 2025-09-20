@@ -1,7 +1,7 @@
 ---
 created: 2025-09-13T04:21:42Z
-last_updated: 2025-09-13T13:39:30Z
-version: 1.1
+last_updated: 2025-09-19T10:26:34Z
+version: 1.2
 author: Claude Code PM System
 ---
 
@@ -10,14 +10,28 @@ author: Claude Code PM System
 ## 技术栈概览
 
 ### 运行时环境
-- **Node.js**: >= 18.0.0 (ES Modules支持)
+- **Node.js**: >= 16.0.0 (ES Modules支持)
 - **npm**: >= 8.0.0 (依赖管理)
 - **Docker**: 容器化部署支持
 
 ### 核心框架
-- **Express.js 4.18.2**: Web应用框架
+- **Express.js 4.18.2**: Web应用框架 (双服务架构)
 - **ES Modules**: 现代JavaScript模块系统
 - **JWT (jsonwebtoken 9.0.2)**: 认证和授权
+
+### 双服务架构依赖
+#### AI Service 依赖栈
+- **@volcengine/openapi 1.32.0**: Byteplus官方SDK
+- **AI推理专用库**: ReasoningEnhancer, BasicRouter
+
+#### Backend Service 依赖栈 (新增)
+- **Express.js 4.18.2**: RESTful API框架
+- **CORS 2.8.5**: 跨域资源共享
+- **Helmet 7.0.0**: 安全头部中间件
+- **Express Rate Limit 6.8.1**: API速率限制
+- **Winston 3.10.0**: 结构化日志系统
+- **JSONWebToken 9.0.2**: JWT认证实现
+- **Dotenv 16.3.1**: 环境变量管理
 
 ### AI和数据服务
 - **Byteplus Model Ark**: 主要AI推理服务
@@ -41,11 +55,41 @@ author: Claude Code PM System
 
 ## 架构模式
 
-### 微服务架构
+### 微服务架构 (新版本 - 双服务模式)
 ```
-HearTalk Frontend → HearTalk AI MVP → Byteplus Model Ark
-                                   → VikingDB Vector Database
-                                   → HearTalk Backend (可选)
+HearTalk Frontend → API Gateway/Router
+                           ↓
+                    ┌──────────────┐
+                    │  AI Service  │ (Port: 3000)
+                    │ (推理处理)    │
+                    └──────┬───────┘
+                           │ Internal API
+                           ↓
+                    ┌──────────────┐
+                    │Backend Service│ (Port: 8000)
+                    │ (数据&用户)   │
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │ PostgreSQL   │
+                    │ + Redis      │
+                    └──────────────┘
+                           │
+                    ┌──────▼───────┐
+                    │Byteplus Model│
+                    │ + VikingDB   │
+                    └──────────────┘
+```
+
+### AI记忆系统集成架构 (新增)
+```
+AI Service → ContextManager → BackendApiClient → Backend Internal API
+     ↓              ↓                ↓                    ↓
+ 对话请求    → 检查记忆缓存    → JWT认证     → 获取对话历史
+     ↓              ↓                ↓                    ↓
+ 推理增强    → 用户上下文     → API Key验证  → 获取用户信息
+     ↓              ↓                ↓                    ↓
+ AI响应     → 更新缓存      → 返回数据     → 保存新消息
 ```
 
 ### 分层架构设计
