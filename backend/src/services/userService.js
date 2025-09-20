@@ -1,13 +1,13 @@
 /**
  * 用户服务
  * 处理用户数据的CRUD操作
- * 注意：这是一个模拟服务，实际生产环境中应该连接真实数据库
  */
 
 const { logger } = require('../utils/logger');
 const database = require('../config/database');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { validateUserPreferences } = require('../config/defaults');
 
 /**
  * 用户服务错误类
@@ -39,10 +39,12 @@ class UserService {
         userId
       });
 
-      // 模拟数据库查询延迟
-      await this.simulateDelay(15);
-
-      const user = mockUsers.get(parseInt(userId));
+      const result = await database.query(
+        'SELECT id, username, name, email, preferences, created_at, updated_at, last_login, status FROM users WHERE id = $1 AND status != $2',
+        [userId, 'deleted']
+      );
+      
+      const user = result.rows.length > 0 ? result.rows[0] : null;
       
       // 出于安全考虑，不返回敏感信息
       const sanitizedUser = user ? this.sanitizeUser(user) : null;
@@ -81,12 +83,12 @@ class UserService {
         username
       });
 
-      // 模拟数据库查询延迟
-      await this.simulateDelay(20);
-
-      const user = Array.from(mockUsers.values())
-        .find(u => u.username === username);
+      const result = await database.query(
+        'SELECT id, username, name, email, preferences, created_at, updated_at, last_login, status FROM users WHERE username = $1 AND status != $2',
+        [username, 'deleted']
+      );
       
+      const user = result.rows.length > 0 ? result.rows[0] : null;
       const sanitizedUser = user ? this.sanitizeUser(user) : null;
       
       const duration = Date.now() - startTime;
@@ -123,12 +125,12 @@ class UserService {
         email
       });
 
-      // 模拟数据库查询延迟
-      await this.simulateDelay(20);
-
-      const user = Array.from(mockUsers.values())
-        .find(u => u.email.toLowerCase() === email.toLowerCase());
+      const result = await database.query(
+        'SELECT id, username, name, email, preferences, created_at, updated_at, last_login, status FROM users WHERE LOWER(email) = LOWER($1) AND status != $2',
+        [email, 'deleted']
+      );
       
+      const user = result.rows.length > 0 ? result.rows[0] : null;
       const sanitizedUser = user ? this.sanitizeUser(user) : null;
       
       const duration = Date.now() - startTime;
@@ -186,31 +188,23 @@ class UserService {
         throw new Error('Email already exists');
       }
 
-      // 模拟数据库写入延迟
-      await this.simulateDelay(40);
+      // 验证并设置默认偏好
+      const validatedPreferences = validateUserPreferences(userData.preferences);
 
-      const newId = Math.max(...mockUsers.keys()) + 1;
-      const now = new Date().toISOString();
-      
-      const newUser = {
-        id: newId,
-        username: userData.username,
-        name: userData.name || userData.username,
-        email: userData.email.toLowerCase(),
-        preferences: {
-          language: 'zh-CN',
-          theme: 'light',
-          notifications: true,
-          aiPersonality: 'friendly',
-          ...userData.preferences
-        },
-        created_at: now,
-        updated_at: now,
-        last_login: null,
-        status: 'active'
-      };
+      const result = await database.query(
+        `INSERT INTO users (username, name, email, preferences, status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+         RETURNING id, username, name, email, preferences, created_at, updated_at, last_login, status`,
+        [
+          userData.username,
+          userData.name || userData.username,
+          userData.email.toLowerCase(),
+          JSON.stringify(validatedPreferences),
+          'active'
+        ]
+      );
 
-      mockUsers.set(newId, newUser);
+      const newUser = result.rows[0];
 
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(

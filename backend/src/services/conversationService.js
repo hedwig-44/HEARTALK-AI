@@ -1,33 +1,10 @@
 /**
  * 对话服务
  * 处理对话数据的CRUD操作
- * 注意：这是一个模拟服务，实际生产环境中应该连接真实数据库
  */
 
 const { logger } = require('../utils/logger');
-
-/**
- * 模拟对话数据存储
- * 在真实环境中，这应该是数据库表
- */
-const mockConversations = new Map([
-  [1, {
-    id: 1,
-    user_id: 1,
-    title: '测试对话1',
-    status: 'active',
-    created_at: '2025-09-18T08:00:00Z',
-    updated_at: '2025-09-18T08:00:00Z'
-  }],
-  [2, {
-    id: 2,
-    user_id: 1,
-    title: '测试对话2',
-    status: 'active',
-    created_at: '2025-09-18T09:00:00Z',
-    updated_at: '2025-09-18T09:00:00Z'
-  }]
-]);
+const database = require('../config/database');
 
 class ConversationService {
   constructor() {
@@ -47,10 +24,12 @@ class ConversationService {
         conversationId
       });
 
-      // 模拟数据库查询延迟
-      await this.simulateDelay(10);
+      const result = await database.query(
+        'SELECT id, user_id, title, status, created_at, updated_at FROM conversations WHERE id = $1',
+        [conversationId]
+      );
 
-      const conversation = mockConversations.get(parseInt(conversationId));
+      const conversation = result.rows.length > 0 ? result.rows[0] : null;
       
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(
@@ -92,14 +71,16 @@ class ConversationService {
         offset
       });
 
-      // 模拟数据库查询延迟
-      await this.simulateDelay(20);
+      const result = await database.query(
+        `SELECT id, user_id, title, status, created_at, updated_at 
+         FROM conversations 
+         WHERE user_id = $1 
+         ORDER BY updated_at DESC 
+         LIMIT $2 OFFSET $3`,
+        [userId, limit, offset]
+      );
 
-      // 筛选属于该用户的对话
-      const userConversations = Array.from(mockConversations.values())
-        .filter(conv => conv.user_id === parseInt(userId))
-        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)) // 按更新时间倒序
-        .slice(offset, offset + limit);
+      const userConversations = result.rows;
 
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(
@@ -138,22 +119,18 @@ class ConversationService {
         title: conversationData.title
       });
 
-      // 模拟数据库写入延迟
-      await this.simulateDelay(30);
+      const result = await database.query(
+        `INSERT INTO conversations (user_id, title, status, created_at, updated_at)
+         VALUES ($1, $2, $3, NOW(), NOW())
+         RETURNING id, user_id, title, status, created_at, updated_at`,
+        [
+          conversationData.user_id,
+          conversationData.title || '新对话',
+          'active'
+        ]
+      );
 
-      const newId = Math.max(...mockConversations.keys()) + 1;
-      const now = new Date().toISOString();
-      
-      const newConversation = {
-        id: newId,
-        user_id: conversationData.user_id,
-        title: conversationData.title || `对话 ${newId}`,
-        status: 'active',
-        created_at: now,
-        updated_at: now
-      };
-
-      mockConversations.set(newId, newConversation);
+      const newConversation = result.rows[0];
 
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(

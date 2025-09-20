@@ -1,65 +1,12 @@
 /**
  * 消息服务
  * 处理对话消息的CRUD操作
- * 注意：这是一个模拟服务，实际生产环境中应该连接真实数据库
  */
 
 const { logger } = require('../utils/logger');
+const database = require('../config/database');
+const { generateTimestamp } = require('../config/defaults');
 
-/**
- * 模拟消息数据存储
- * 在真实环境中，这应该是数据库表
- */
-const mockMessages = new Map([
-  [1, {
-    id: 1,
-    conversation_id: 1,
-    role: 'user',
-    content: '你好，请介绍一下你自己。',
-    created_at: '2025-09-18T08:00:10Z',
-    updated_at: '2025-09-18T08:00:10Z'
-  }],
-  [2, {
-    id: 2,
-    conversation_id: 1,
-    role: 'assistant',
-    content: '你好！我是HearTalk AI助手，很高兴为您服务。我可以帮助您解答问题、进行对话和提供各种信息。有什么我可以帮助您的吗？',
-    created_at: '2025-09-18T08:00:15Z',
-    updated_at: '2025-09-18T08:00:15Z'
-  }],
-  [3, {
-    id: 3,
-    conversation_id: 1,
-    role: 'user',
-    content: '能帮我写一个简单的Python函数吗？',
-    created_at: '2025-09-18T08:01:20Z',
-    updated_at: '2025-09-18T08:01:20Z'
-  }],
-  [4, {
-    id: 4,
-    conversation_id: 1,
-    role: 'assistant',
-    content: '当然可以！这里是一个简单的Python函数示例：\n\n```python\ndef greet(name):\n    """简单的问候函数"""\n    return f"你好，{name}！"\n\n# 使用示例\nresult = greet("小明")\nprint(result)  # 输出：你好，小明！\n```\n\n这个函数接受一个姓名参数，并返回一个问候语。您还需要其他类型的函数吗？',
-    created_at: '2025-09-18T08:01:25Z',
-    updated_at: '2025-09-18T08:01:25Z'
-  }],
-  [5, {
-    id: 5,
-    conversation_id: 2,
-    role: 'user',
-    content: '今天天气怎么样？',
-    created_at: '2025-09-18T09:00:10Z',
-    updated_at: '2025-09-18T09:00:10Z'
-  }],
-  [6, {
-    id: 6,
-    conversation_id: 2,
-    role: 'assistant',
-    content: '抱歉，我无法获取实时天气信息。建议您查看天气预报应用或网站获取准确的天气信息。不过我可以帮您解答其他问题！',
-    created_at: '2025-09-18T09:00:15Z',
-    updated_at: '2025-09-18T09:00:15Z'
-  }]
-]);
 
 class MessageService {
   constructor() {
@@ -94,27 +41,27 @@ class MessageService {
         order
       });
 
-      // 模拟数据库查询延迟
-      await this.simulateDelay(25);
+      // 构建排序语句
+      const orderDirection = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+      const validOrderBy = ['created_at', 'updated_at', 'id'].includes(orderBy) ? orderBy : 'created_at';
 
-      // 筛选属于该对话的消息
-      let conversationMessages = Array.from(mockMessages.values())
-        .filter(msg => msg.conversation_id === parseInt(conversationId));
+      const result = await database.query(
+        `SELECT id, conversation_id, role, content, created_at, updated_at
+         FROM messages 
+         WHERE conversation_id = $1
+         ORDER BY ${validOrderBy} ${orderDirection}
+         LIMIT $2 OFFSET $3`,
+        [conversationId, limit, offset]
+      );
 
-      // 排序
-      conversationMessages.sort((a, b) => {
-        const aValue = new Date(a[orderBy]);
-        const bValue = new Date(b[orderBy]);
-        
-        if (order.toUpperCase() === 'DESC') {
-          return bValue - aValue;
-        } else {
-          return aValue - bValue;
-        }
-      });
+      const paginatedMessages = result.rows;
 
-      // 分页
-      const paginatedMessages = conversationMessages.slice(offset, offset + limit);
+      // 获取总数用于日志
+      const countResult = await database.query(
+        'SELECT COUNT(*) as total FROM messages WHERE conversation_id = $1',
+        [conversationId]
+      );
+      const totalCount = parseInt(countResult.rows[0].total);
 
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(
@@ -125,7 +72,7 @@ class MessageService {
         { 
           conversationId, 
           found: paginatedMessages.length, 
-          total: conversationMessages.length,
+          total: totalCount,
           limit, 
           offset 
         }
@@ -157,10 +104,12 @@ class MessageService {
         messageId
       });
 
-      // 模拟数据库查询延迟
-      await this.simulateDelay(10);
+      const result = await database.query(
+        'SELECT id, conversation_id, role, content, created_at, updated_at FROM messages WHERE id = $1',
+        [messageId]
+      );
 
-      const message = mockMessages.get(parseInt(messageId));
+      const message = result.rows.length > 0 ? result.rows[0] : null;
       
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(
@@ -211,22 +160,41 @@ class MessageService {
         throw new Error('Invalid role. Must be "user" or "assistant"');
       }
 
-      // 模拟数据库写入延迟
-      await this.simulateDelay(35);
-
-      const newId = Math.max(...mockMessages.keys()) + 1;
-      const now = new Date().toISOString();
+      // 生成带偏移的时间戳
+      let messageTime;
       
-      const newMessage = {
-        id: newId,
-        conversation_id: parseInt(messageData.conversation_id),
-        role: messageData.role,
-        content: messageData.content,
-        created_at: now,
-        updated_at: now
-      };
+      if (messageData.role === 'user') {
+        // 用户消息使用当前时间
+        messageTime = new Date();
+      } else {
+        // AI消息需要查找对话中最后一条用户消息的时间
+        const lastUserMessageResult = await database.query(
+          `SELECT created_at FROM messages 
+           WHERE conversation_id = $1 AND role = 'user'
+           ORDER BY created_at DESC LIMIT 1`,
+          [messageData.conversation_id]
+        );
+        
+        const baseTime = lastUserMessageResult.rows.length > 0 
+          ? new Date(lastUserMessageResult.rows[0].created_at)
+          : new Date();
+          
+        messageTime = generateTimestamp(baseTime, messageData.role);
+      }
 
-      mockMessages.set(newId, newMessage);
+      const result = await database.query(
+        `INSERT INTO messages (conversation_id, role, content, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $4)
+         RETURNING id, conversation_id, role, content, created_at, updated_at`,
+        [
+          messageData.conversation_id,
+          messageData.role,
+          messageData.content,
+          messageTime
+        ]
+      );
+
+      const newMessage = result.rows[0];
 
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(
@@ -268,37 +236,40 @@ class MessageService {
         updateFields: Object.keys(updateData)
       });
 
-      // 模拟数据库更新延迟
-      await this.simulateDelay(30);
+      // 构建动态更新语句
+      const updateFields = [];
+      const updateValues = [];
+      let paramIndex = 1;
 
-      const message = mockMessages.get(parseInt(messageId));
-      if (!message) {
-        const duration = Date.now() - startTime;
-        this.logger.logDatabaseOperation(
-          'UPDATE',
-          'messages',
-          duration,
-          false,
-          { messageId, reason: 'not_found' }
-        );
-        return null;
+      if (updateData.content !== undefined) {
+        updateFields.push(`content = $${paramIndex++}`);
+        updateValues.push(updateData.content);
+      }
+      
+      updateFields.push(`updated_at = NOW()`);
+      updateValues.push(messageId);
+
+      if (updateFields.length === 1) {
+        // 只有updated_at更新，没有实际数据变更
+        return await this.getById(messageId);
       }
 
-      const updatedMessage = {
-        ...message,
-        ...updateData,
-        updated_at: new Date().toISOString()
-      };
+      const result = await database.query(
+        `UPDATE messages SET ${updateFields.join(', ')} 
+         WHERE id = $${paramIndex}
+         RETURNING id, conversation_id, role, content, created_at, updated_at`,
+        updateValues
+      );
 
-      mockMessages.set(parseInt(messageId), updatedMessage);
+      const updatedMessage = result.rows.length > 0 ? result.rows[0] : null;
 
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(
         'UPDATE',
         'messages',
         duration,
-        true,
-        { messageId }
+        !!updatedMessage,
+        { messageId, updated: !!updatedMessage }
       );
 
       return updatedMessage;
@@ -327,11 +298,12 @@ class MessageService {
         messageId
       });
 
-      // 模拟数据库删除延迟
-      await this.simulateDelay(25);
+      const result = await database.query(
+        'DELETE FROM messages WHERE id = $1',
+        [messageId]
+      );
 
-      const existed = mockMessages.has(parseInt(messageId));
-      mockMessages.delete(parseInt(messageId));
+      const existed = result.rowCount > 0;
 
       const duration = Date.now() - startTime;
       this.logger.logDatabaseOperation(
@@ -367,22 +339,25 @@ class MessageService {
         conversationId
       });
 
-      // 模拟数据库查询延迟
-      await this.simulateDelay(20);
+      const result = await database.query(
+        `SELECT 
+           COUNT(*) as total_messages,
+           COUNT(CASE WHEN role = 'user' THEN 1 END) as user_messages,
+           COUNT(CASE WHEN role = 'assistant' THEN 1 END) as assistant_messages,
+           MIN(created_at) as first_message_date,
+           MAX(created_at) as last_message_date
+         FROM messages 
+         WHERE conversation_id = $1`,
+        [conversationId]
+      );
 
-      const conversationMessages = Array.from(mockMessages.values())
-        .filter(msg => msg.conversation_id === parseInt(conversationId));
-
+      const row = result.rows[0];
       const stats = {
-        totalMessages: conversationMessages.length,
-        userMessages: conversationMessages.filter(msg => msg.role === 'user').length,
-        assistantMessages: conversationMessages.filter(msg => msg.role === 'assistant').length,
-        firstMessageDate: conversationMessages.length > 0 
-          ? Math.min(...conversationMessages.map(msg => new Date(msg.created_at)))
-          : null,
-        lastMessageDate: conversationMessages.length > 0 
-          ? Math.max(...conversationMessages.map(msg => new Date(msg.created_at)))
-          : null
+        totalMessages: parseInt(row.total_messages),
+        userMessages: parseInt(row.user_messages),
+        assistantMessages: parseInt(row.assistant_messages),
+        firstMessageDate: row.first_message_date,
+        lastMessageDate: row.last_message_date
       };
 
       const duration = Date.now() - startTime;
@@ -419,25 +394,53 @@ class MessageService {
         count: messagesData.length
       });
 
-      // 模拟数据库批量写入延迟
-      await this.simulateDelay(50 + messagesData.length * 10);
-
       const createdMessages = [];
+      
+      // 使用事务批量插入
       for (const messageData of messagesData) {
-        const newId = Math.max(...mockMessages.keys(), ...createdMessages.map(m => m.id)) + 1;
-        const now = new Date().toISOString();
-        
-        const newMessage = {
-          id: newId,
-          conversation_id: parseInt(messageData.conversation_id),
-          role: messageData.role,
-          content: messageData.content,
-          created_at: now,
-          updated_at: now
-        };
+        // 验证必要字段
+        if (!messageData.conversation_id || !messageData.role || !messageData.content) {
+          throw new Error('Missing required fields in batch data: conversation_id, role, content');
+        }
 
-        mockMessages.set(newId, newMessage);
-        createdMessages.push(newMessage);
+        // 验证角色
+        if (!['user', 'assistant'].includes(messageData.role)) {
+          throw new Error('Invalid role in batch data. Must be "user" or "assistant"');
+        }
+
+        // 生成带偏移的时间戳
+        let messageTime;
+        if (messageData.role === 'user') {
+          messageTime = new Date();
+        } else {
+          // 对于AI消息，使用当前对话中最后一条用户消息的时间作为基准
+          const lastUserMessageResult = await database.query(
+            `SELECT created_at FROM messages 
+             WHERE conversation_id = $1 AND role = 'user'
+             ORDER BY created_at DESC LIMIT 1`,
+            [messageData.conversation_id]
+          );
+          
+          const baseTime = lastUserMessageResult.rows.length > 0 
+            ? new Date(lastUserMessageResult.rows[0].created_at)
+            : new Date();
+            
+          messageTime = generateTimestamp(baseTime, messageData.role);
+        }
+
+        const result = await database.query(
+          `INSERT INTO messages (conversation_id, role, content, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $4)
+           RETURNING id, conversation_id, role, content, created_at, updated_at`,
+          [
+            messageData.conversation_id,
+            messageData.role,
+            messageData.content,
+            messageTime
+          ]
+        );
+
+        createdMessages.push(result.rows[0]);
       }
 
       const duration = Date.now() - startTime;
@@ -461,21 +464,6 @@ class MessageService {
     }
   }
 
-  /**
-   * 模拟数据库操作延迟
-   * @param {number} ms - 延迟毫秒数
-   * @private
-   */
-  async simulateDelay(ms) {
-    // 在测试环境中可以禁用延迟
-    if (process.env.NODE_ENV === 'test') {
-      return;
-    }
-    
-    // 添加随机波动以模拟真实数据库响应时间
-    const randomDelay = ms + Math.random() * 15;
-    await new Promise(resolve => setTimeout(resolve, randomDelay));
-  }
 }
 
 module.exports = new MessageService();
